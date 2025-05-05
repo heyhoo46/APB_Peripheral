@@ -98,4 +98,21 @@ module MCU (
         // inport signals
         .inPort(GPIB)
     );
+
+    UART_Periph (
+    // global signal
+    input  logic        PCLK,
+    input  logic        PRESET,
+    // APB Interface Signals
+    input  logic [ 3:0] PADDR,
+    input  logic [31:0] PWDATA,
+    input  logic        PWRITE,
+    input  logic        PENABLE,
+    input  logic        PSEL,
+    output logic [31:0] PRDATA,
+    output logic        PREADY,
+    // inport signals
+    output logic        tx,
+    input logic         rx
+);
 endmodule
