@@ -4,7 +4,9 @@ module MCU (
     input  logic       clk,
     input  logic       reset,
     output logic [7:0] GPOA,
-    input  logic [7:0] GPIB
+    input  logic [7:0] GPIB,
+    output logic       tx,
+    input logic        rx
 );
     // global signals
     logic        PCLK;
@@ -17,15 +19,15 @@ module MCU (
     logic        PSEL_RAM;
     logic        PSEL_GPO;
     logic        PSEL_GPI;
-    logic        PSEL3;
+    logic        PSEL_UART;
     logic [31:0] PRDATA_RAM;
     logic [31:0] PRDATA_GPO;
     logic [31:0] PRDATA_GPI;
-    logic [31:0] PRDATA3;
+    logic [31:0] PRDATA_UART;
     logic        PREADY_RAM;
     logic        PREADY_GPO;
     logic        PREADY_GPI;
-    logic        PREADY3;
+    logic        PREADY_UART;
 
     // CPU - APB_Master Signals
     // Internal Interface Signals
@@ -63,15 +65,15 @@ module MCU (
         .PSEL0  (PSEL_RAM),
         .PSEL1  (PSEL_GPO),
         .PSEL2  (PSEL_GPI),
-        .PSEL3  (),
+        .PSEL3  (PSEL_UART),
         .PRDATA0(PRDATA_RAM),
         .PRDATA1(PRDATA_GPO),
         .PRDATA2(PRDATA_GPI),
-        .PRDATA3(),
+        .PRDATA3(PRDATA_UART),
         .PREADY0(PREADY_RAM),
         .PREADY1(PREADY_GPO),
         .PREADY2(PREADY_GPI),
-        .PREADY3()
+        .PREADY3(PREADY_UART)
     );
 
     ram U_RAM (
@@ -99,20 +101,10 @@ module MCU (
         .inPort(GPIB)
     );
 
-    UART_Periph (
-    // global signal
-    input  logic        PCLK,
-    input  logic        PRESET,
-    // APB Interface Signals
-    input  logic [ 3:0] PADDR,
-    input  logic [31:0] PWDATA,
-    input  logic        PWRITE,
-    input  logic        PENABLE,
-    input  logic        PSEL,
-    output logic [31:0] PRDATA,
-    output logic        PREADY,
-    // inport signals
-    output logic        tx,
-    input logic         rx
+    UART_Periph U_UART(
+        .*,
+        .PSEL(PSEL_UART),
+        .PRDATA(PRDATA_UART),
+        .PREADY(PREADY_UART),
 );
 endmodule
