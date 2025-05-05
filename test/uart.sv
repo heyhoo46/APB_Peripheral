@@ -47,7 +47,7 @@ module UART_Periph (
     end
 
     assign wr_en = edge_wr & ~edge_wr_d;
-    assign rd_en = (!empty) & ~edge_rd_d;
+    assign rd_en = edge_rd & ~edge_rd_d;
     assign fsr[0] = empty;
     assign fsr[1] = full;
 
