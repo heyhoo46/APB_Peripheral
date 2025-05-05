@@ -414,7 +414,7 @@ module tick_gen (
     output tick
 );
 
-    localparam CNT = 10;//(100_000_000)/(9600*16);
+    localparam CNT = (100_000_000)/(9600*16);
 
     reg r_tick;
     assign tick = r_tick;
