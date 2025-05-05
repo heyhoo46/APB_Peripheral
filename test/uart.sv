@@ -100,10 +100,10 @@ module APB_SlaveIntf_FIFO (
     //assign fsr = slv_reg0[1:0];
     assign fwd = slv_reg1[7:0];
     //assign frd = slv_reg2[7:0];
-    always_comb begin 
+    /*always_comb begin 
         slv_reg0[1:0] = fsr;
         slv_reg2[7:0] = frd;
-    end
+    end*/
 
     always_ff @(posedge PCLK, posedge PRESET) begin
         if (PRESET) begin
@@ -112,6 +112,8 @@ module APB_SlaveIntf_FIFO (
             // slv_reg2 <= 0;
             // slv_reg3 <= 0;
         end else begin
+            slv_reg0[1:0] <= fsr;
+            slv_reg2[7:0] <= frd;
             if (PSEL && PENABLE) begin
                 PREADY <= 1'b1;
                 if (PWRITE) begin
