@@ -31,7 +31,7 @@ module UART_Periph (
     logic edge_rd, edge_rd_d;
 
 
-    assign edge_wr = PSEL & PWRITE & PENABLE;
+    assign edge_wr = PSEL & PWRITE & PENABLE & PREADY;
     assign edge_rd = (!empty) & tx_done;
 
     always_ff @( posedge PCLK, posedge PRESET ) begin
@@ -40,8 +40,8 @@ module UART_Periph (
             edge_wr_d <= 0;
         end
         else begin
-            edge_rd_d <= edge_wr;
-            edge_wr_d <= edge_rd;
+            edge_wr_d <= edge_wr;
+            edge_rd_d <= edge_rd;
         end
     end
 
@@ -414,7 +414,7 @@ module tick_gen (
     output tick
 );
 
-    localparam CNT = (100_000_000)/(9600*16);
+    localparam CNT = 10;//(100_000_000)/(9600*16);
 
     reg r_tick;
     assign tick = r_tick;
