@@ -27,21 +27,29 @@ module UART_Periph (
 
     logic tx_done;
 
-    always_ff @( posedge PCLK, posedge PRESET ) begin : blockName
+    logic edge_wr, edge_wr_d;
+    logic edge_rd, edge_rd_d;
+
+    assign edge_wr = PSEL & PWRITE & PENABLE;
+    assign edge_rd = (!empty) & tx_done;
+
+    always_ff @( posedge PCLK, posedge PRESET ) begin
         if (PRESET) begin
             wr_en <= 0;
             rd_en <= 0;
+            edge_rd_d <= 0;
+            edge_wr_d <= 0;
         end
         else begin
-            wr_en <= PSEL & PWRITE & PENABLE;
-            rd_en <= (!empty) & tx_done;
+            edge_rd_d <= edge_wr;
+            edge_wr_d <= edge_rd;
         end
     end
 
+    assign wr_en = edge_wr & ~edge_wr_d;
+    assign rd_en = (!empty) & ~edge_rd_d;
     assign fsr[0] = empty;
     assign fsr[1] = full;
-
-
 
     APB_SlaveIntf_FIFO U_APB_IntfO_FIFO (.*);
 
