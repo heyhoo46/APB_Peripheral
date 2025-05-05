@@ -17,26 +17,25 @@ module UART_Periph (
     input logic         rx
 );
 
-    logic full;
-    logic empty;
+    logic full, empty;
     logic [7:0] fwd;
-    logic [7:0] frd;
+    //logic [7:0] frd;
     logic [1:0] fsr;
     logic wr_en;
     logic rd_en;
+    logic [7:0] data;
 
     logic tx_done;
 
     logic edge_wr, edge_wr_d;
     logic edge_rd, edge_rd_d;
 
+
     assign edge_wr = PSEL & PWRITE & PENABLE;
     assign edge_rd = (!empty) & tx_done;
 
     always_ff @( posedge PCLK, posedge PRESET ) begin
         if (PRESET) begin
-            wr_en <= 0;
-            rd_en <= 0;
             edge_rd_d <= 0;
             edge_wr_d <= 0;
         end
@@ -61,7 +60,7 @@ module UART_Periph (
         .wr_en(wr_en),
         .full (full),
         // read side
-        .rdata(frd),
+        .rdata(data),
         .rd_en(rd_en),
         .empty(empty)
     );
@@ -69,7 +68,7 @@ module UART_Periph (
     uart u_uart(
         .clk(PCLK),
         .reset(PRESET),
-        .data(frd),
+        .data(data),
         .rx(rx),
         .w_start(tx_done & !empty),
         .tx(tx),
@@ -91,9 +90,8 @@ module APB_SlaveIntf_FIFO (
     output logic [31:0] PRDATA,
     output logic        PREADY,
     // internal signals
-    output logic [1:0] fsr,
-    output logic [7:0] fwd,
-    output logic [7:0] frd
+    input logic [1:0] fsr,
+    output logic [7:0] fwd
 );
     logic [31:0] slv_reg0, slv_reg1, slv_reg2;//, slv_reg3;
 
@@ -107,13 +105,14 @@ module APB_SlaveIntf_FIFO (
 
     always_ff @(posedge PCLK, posedge PRESET) begin
         if (PRESET) begin
-            // slv_reg0 <= 0;
+            slv_reg0 <= 0;
             slv_reg1 <= 0;
+            PREADY <= 0;
+            PRDATA <= 0;
             // slv_reg2 <= 0;
             // slv_reg3 <= 0;
         end else begin
             slv_reg0[1:0] <= fsr;
-            slv_reg2[7:0] <= frd;
             if (PSEL && PENABLE) begin
                 PREADY <= 1'b1;
                 if (PWRITE) begin
@@ -129,7 +128,7 @@ module APB_SlaveIntf_FIFO (
                     case (PADDR[3:2])
                         2'd0: PRDATA <= slv_reg0;
                         2'd1: PRDATA <= slv_reg1;
-                        2'd2: PRDATA <= slv_reg2;
+                        //2'd2: PRDATA <= slv_reg2;
                         // 2'd3: PRDATA <= slv_reg3;
                     endcase
                 end
