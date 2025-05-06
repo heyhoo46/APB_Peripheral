@@ -126,15 +126,18 @@ void Timer_write_arr(TIMER_TypeDef *timerx, uint32_t arr);
 uint32_t Timer_read(TIMER_TypeDef *timerx);
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data);
-void UART_sendString(UART_TypeDef *UARTx, const char *str);
-void utoa(uint32_t val, char *buf);
+
+uint32_t value_divide(uint32_t value);
+void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1);
+void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi_integral_1, uint32_t humi_decimal_10, uint32_t humi_decimal_1);
+void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_100, uint32_t dist_10, uint32_t dist_1);
 
 #define led_default 0b11
 
 int main() {
-    char buf[64];
     LED_init(GPIOA);
     Switch_init(GPIOB);
+    Switch_init(GPIOC);
 
     FND_init(FND, POWER_ON);
     FND_writeDot(FND, 0);
@@ -157,6 +160,8 @@ int main() {
     uint32_t ggambbak = 0;
     uint32_t fnd_shape = 0;
     uint32_t led_data = 0b11;
+
+    uint8_t d, i, s, t, e, m, p, h, u = 0;
 
     while (1) {
         DOT3_Timer(&DOT3, &btn_flag3);
@@ -187,6 +192,9 @@ int main() {
                 FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
+                d, i, s, t = value_divide(temperature);
+                delay(10);
+                UART_Send_distance(UART, d, i, s, t);
                 break;
 
             case (1 << 5):
@@ -194,6 +202,10 @@ int main() {
                 delay(1000);
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
+                t, e, m, p = value_divide(temperature);
+                delay(10);
+                UART_Send_Temp(UART, t, e, m, p);
+
                 break;
 
             case (1 << 4):
@@ -201,13 +213,18 @@ int main() {
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
+                h, u, m, i = value_divide(temperature);
+                delay(10);
+                UART_Send_Humi(UART, h, u, m, i);
                 break;
 
-            case (1 << 3): {
+            case (1 << 3):
                 LED_write(GPIOA, led_default);
                 FND_init(FND,POWER_OFF);
                 while(Switch_read(GPIOB) == (1<<3))
                 {
+                    uint8_t sw_btn = Switch_read(GPIOC);
+
                     switch(blinker_state){
                         case HAZARD_BLINK_STATE:
                             ggambbak = 0b11;
@@ -266,7 +283,7 @@ int main() {
                         case DEFAULT_STATE: break;
                     }
 
-                    switch(Switch_read(GPIOC))
+                    switch(sw_btn)
                     {
                         case (1<<0):
                             blinker_state = LEFT_BLINK_STAT;
@@ -302,27 +319,7 @@ int main() {
                 LED_write(GPIOA, 0);
                 FND_init(FND, POWER_ON);
                 break;
-            }
-            case (1 << 2): {
-                uint32_t ultra_val = Ultra_read(ULTRA);
-                uint32_t dht_val   = DHT_read(DHT);
             
-                char str1[16], str2[16];
-            
-                utoa(ultra_val, str1);
-                utoa(dht_val, str2);
-            
-                UART_sendString(UART, "Ultra: ");
-                UART_sendString(UART, str1);
-                UART_sendString(UART, " mm, DHT: ");
-                UART_sendString(UART, str2);
-                UART_sendString(UART, "\r\n");
-            
-                break;
-            }
-             
-    
-
             default:
                 FND_writeData(FND, 7777);
                 break;
@@ -420,37 +417,93 @@ void DOT3_Timer(uint32_t *DOT3, uint32_t *btn_flag2){
     FND_writeDot(FND, *DOT3);
 }
 
-void UART_send(UART_TypeDef *UARTx, uint8_t data) {  
+void UART_send(UART_TypeDef *UARTx, uint8_t data)
+{  
     while (!(UARTx->FSR & (1<<1)));// UART TX READY 
     UARTx->FWD = data;
 }
 
+uint32_t value_divide(uint32_t value)
+{
+    uint8_t acii[5];
+    acii[0] = (value / 1000) % 10;
+    acii[1] = (value / 100) % 10;
+    acii[2] = (value / 10) % 10;
+    acii[3] = value % 10;
 
-void utoa(uint32_t val, char *buf) {
-    char temp[10];
-    int i = 0, j = 0;
-
-    if (val == 0) {
-        buf[0] = '0';
-        buf[1] = '\0';
-        return;
-    }
-
-    while (val > 0) {
-        temp[i++] = (val % 10) + '0';
-        val /= 10;
-    }
-
-    // 역순으로 복사
-    while (i > 0) {
-        buf[j++] = temp[--i];
-    }
-    buf[j] = '\0';
+    return acii[0],acii[1],acii[2],acii[3];
 }
 
-void UART_sendString(UART_TypeDef *UARTx, const char *str) {
-    while (*str) {
-        UART_send(UARTx, *str++);
+
+void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1)
+{
+    uint32_t text_string[] = {
+        'T',         // T
+        'e',         // e
+        'm',         // m
+        'p',         // p
+        ':',         // :
+        '0' + temp_integral_10,   // tens
+        '0' + temp_integral_1,    // ones
+        '.',
+        '0' + temp_decimal_10,    // tens
+        '0' + temp_decimal_1,     // ones
+        0x0A,         // \n (newline)
+        0x00          // NULL (string terminator)
+    };
+    
+    for (int i = 0; text_string[i] != 0x00; i++) {
+        UART_send(uart, text_string[i]);
     }
+
 }
 
+void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi_integral_1, uint32_t humi_decimal_10, uint32_t humi_decimal_1)
+{
+    uint32_t text_string[] = {
+        'H',         // H
+        'u',         // u
+        'm',         // m
+        'i',         // i
+        'd',         // d
+        'i',         // i
+        't',         // t
+        'y',         // y
+        ':',         // :
+        '0' + humi_integral_10,   // tens
+        '0' + humi_integral_1,    // ones
+        '.',
+        '0' + humi_decimal_10,    // tens
+        '0' + humi_decimal_1,     // ones
+        0x0A,         // \n (newline)
+        0x00          // NULL (string terminator)
+    };
+    
+    for (int i = 0; text_string[i] != 0x00; i++) {
+        UART_send(uart, text_string[i]);
+    }
+    
+}
+
+void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_100, uint32_t dist_10, uint32_t dist_1)
+{
+    uint32_t text_string[] = {
+        'd', // d
+        'i', // i
+        's',        // s
+        't', // t
+        ':', // :                    
+        '0' + dist_1000,  // 1000
+        '0' + dist_100,   // 100
+        '.',
+        '0' + dist_10,    // 10
+        '0' + dist_1,     // 1
+        0x0A, // \n (newline)
+        0x00  // NULL (string terminator)
+    };
+    
+    for (int i = 0; text_string[i] != 0x00; i++) {
+        UART_send(uart, text_string[i]);
+    }
+    
+}
