@@ -25,7 +25,7 @@ int main(){
 }
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data) {  
-    if(!(UARTx ->FSR)){
+    if((UARTx ->FSR == 0)){
         UARTx->FWD = data;
     }
 }
