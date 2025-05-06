@@ -4,7 +4,6 @@
 typedef struct{
     __IO uint32_t FSR;
     __IO uint32_t FWD;
-    __IO uint32_t FRD;
 } UART_TypeDef;
 
 #define APB_BASEADDR    0x10000000
@@ -26,5 +25,7 @@ int main(){
 }
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data) {  
-    UARTx->FWD = data;
+    if(!(UARTx ->FSR)){
+        UARTx->FWD = data;
+    }
 }
