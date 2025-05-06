@@ -193,6 +193,7 @@ int main() {
                 FND_writeData(FND, distance);
                 Ultra_init(ULTRA, POWER_OFF);
                 BLINK_init(BLINK, distance);
+                BLINK_init(BUZZER, distance);
                 break;
 
             case (1 << 5):
@@ -228,6 +229,7 @@ int main() {
 
                         delay(10);
 
+                        BLINK_init(BUZZER, 49);
                         LED_write(GPIOA, led_data);
                         FND_init(FND,fnd_blink);
                         FND_writeData(FND, fnd_shape);
@@ -246,6 +248,7 @@ int main() {
 
                         delay(10);
 
+                        BLINK_init(BUZZER, 49);
                         LED_write(GPIOA, led_data);
                         FND_init(FND,fnd_blink);
                         FND_writeData(FND, fnd_shape); // debugging
@@ -264,6 +267,7 @@ int main() {
 
                         delay(10);
 
+                        BLINK_init(BUZZER, 49);
                         LED_write(GPIOA, led_data);
                         FND_init(FND,fnd_blink);
                         FND_writeData(FND, fnd_shape); // debugging
@@ -297,6 +301,7 @@ int main() {
                                 led_data = 0b11;
                                 LED_write(GPIOA, led_default);
                                 FND_init(FND,POWER_OFF);
+                                BLINK_init(BUZZER, 1);
                             }
                     }
 

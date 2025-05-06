@@ -12,19 +12,17 @@ module MCU (
     input  logic       echo,
     inout  logic       dht_io,
     output logic [2:0] led,
+    output logic buzzer,
 
     //UART PORT
     output logic       tx,
     input logic        rx,
 
     //TILT, RGB PORT
-    input  logic       tilt_sensor,
+    input  logic       tilt_sensor
 
-    output logic  BUZZER, //BUZZER
-    output logic  PWM //pwm_out
-
-
-
+    // output logic  BUZZER, //BUZZER
+    // output logic  PWM //pwm_out
 );
     // global signals
     logic        PCLK;
@@ -46,6 +44,7 @@ module MCU (
     logic        PSEL_TIMER2;
     logic        PSEL_UART;
     logic        PSEL_BUZZER;
+    logic        PSEL_TILT;
     logic [31:0] PRDATA_RAM;
     logic [31:0] PRDATA_TIMER;
     logic [31:0] PRDATA_GPIOA;
@@ -58,6 +57,7 @@ module MCU (
     logic [31:0] PRDATA_TIMER2;
     logic [31:0] PRDATA_UART;
     logic [31:0] PRDATA_BUZZER;
+    logic [31:0] PRDATA_TILT;
     logic        PREADY_RAM;
     logic        PREADY_TIMER;
     logic        PREADY_GPIOA;
@@ -70,6 +70,7 @@ module MCU (
     logic        PREADY_TIMER2;
     logic        PREADY_UART;
     logic        PREADY_BUZZER;
+    logic        PREADY_TILT;
 
     // CPU - APB_Master Signals
     // Internal Interface Signals
@@ -217,6 +218,15 @@ module MCU (
         .PREADY(PREADY_BLINK),
         .led(led)
     );
+
+    blink_Periph U_buzzer_Periph (
+        .*,
+        .PSEL  (PSEL_BUZZER),
+        .PRDATA(PRDATA_BUZZER),
+        .PREADY(PREADY_BUZZER),
+        .led(buzzer)
+    );
+
     Timer_Periph U_Timer2 (
         .*,
         .PSEL(PSEL_TIMER2),
@@ -230,8 +240,6 @@ module MCU (
         .PRDATA(PRDATA_UART),
         .PREADY(PREADY_UART)
 );
-
-
     tilt U_Tilt (
         .*,
         .PSEL  (PSEL_TILT),
@@ -239,15 +247,6 @@ module MCU (
         .PREADY(PREADY_TILT)
     );
 
-     Buzzer_Periph U_BUZZER_Periph(
-        .*,
-    .PSEL(PSEL_BUZZER),
-    .PRDATA(PRDATA_BUZZER),
-    .PREADY(PREADY_BUZZER),
-    // export signal
-    .buzzer_out(BUZZER),  
-    .pwm_out(PWM)  
-);
 
 endmodule
 
