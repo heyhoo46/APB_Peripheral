@@ -86,18 +86,19 @@ typedef struct {
 
 #define LEFT  16000
 #define RIGHT  16001
-#define BOTH  16002
+#define HAZARD  16002
+
+#define DEFAULT_STATE           0
+#define HAZARD_BLINK_STATE      1
+#define RIGHT_BLINK_STATE       2
+#define LEFT_BLINK_STAT         3
 
 
 #define F_CPU 100000000
 
-void switch_case_func(GPIO_TypeDef *GPIOx_LED, GPIO_TypeDef *GPIOx_SWITCH1, GPIO_TypeDef *GPIOx_SWITCH2, FND_TypeDef *fnd, ULTRA_TypeDef *ultra, BLINK_TypeDef *blink, DHT_TypeDef *dht, TIMER_TypeDef *timerx, uint32_t *temp, uint32_t *temperature, uint32_t *humidity);
-
 
 void delay(int n);
 void DOT3_Timer(uint32_t *DOT3, uint32_t *btn_flag2);
-void led_blink_Timer(uint32_t *switch_in, uint32_t *btn, uint32_t *btn_flag, uint32_t *led_left, uint32_t *led_right, uint32_t *led_emer, uint32_t *btn_detect, uint32_t *left_flag, uint32_t *right_flag, uint32_t *emer_flag);
-
 void LED_init(GPIO_TypeDef *GPIOx);
 void LED_write(GPIO_TypeDef *GPIOx, uint32_t data);
 
@@ -116,9 +117,6 @@ void DHT_init(DHT_TypeDef *dht, uint32_t moder);
 uint32_t DHT_read(DHT_TypeDef *dht);
 
 void BLINK_init(BLINK_TypeDef *blink, uint32_t duty_rate);
-// void PWM_init(BLINK_TypeDef *blink, uint32_t duty_rate);
-
-uint32_t High_Low_Beam(uint32_t *beam_state, uint32_t *beam_detect);
 
 void Timer_stop(TIMER_TypeDef *timerx);
 void Timer_start(TIMER_TypeDef *timerx);
@@ -126,10 +124,6 @@ void Timer_clear(TIMER_TypeDef *timerx);
 void Timer_write_psc(TIMER_TypeDef *timerx, uint32_t psc);
 void Timer_write_arr(TIMER_TypeDef *timerx, uint32_t arr);
 uint32_t Timer_read(TIMER_TypeDef *timerx);
-
-void blink_led_fnd_func(GPIO_TypeDef *GPIOx_LED, GPIO_TypeDef *GPIOx_SWITCH1, GPIO_TypeDef *GPIOx_SWITCH2, FND_TypeDef *fnd, TIMER_TypeDef *timerx);
-
-void toggle_led_fnd(TIMER_TypeDef *timerx, volatile uint8_t *ggambbak, volatile uint8_t *blink_flag, volatile uint8_t *led_data, volatile uint8_t *fnd_blink);
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data);
 void UART_sendString(UART_TypeDef *UARTx, const char *str);
@@ -155,9 +149,7 @@ int main() {
     uint32_t humidity = 0;
 
     uint32_t distance = 0;
-    uint32_t btn_flag = 0;
-    uint32_t sw_flag1 = 0;
-    uint32_t sw_flag2 = 0;
+    uint32_t blinker_state = 0;
     uint32_t btn_flag3 = 0;
     uint32_t btn_detect = 0;
     uint32_t blink_flag = 0;
@@ -187,11 +179,12 @@ int main() {
                 break;
 
             case (1 << 6):
-                Ultra_init(ULTRA, POWER_ON);
                 delay(500);
+                Ultra_init(ULTRA, POWER_ON);
+                delay(10);
                 distance = Ultra_read(ULTRA);
-                FND_writeData(FND, distance);
                 Ultra_init(ULTRA, POWER_OFF);
+                FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
                 break;
@@ -215,72 +208,72 @@ int main() {
                 FND_init(FND,POWER_OFF);
                 while(Switch_read(GPIOB) == (1<<3))
                 {
-                    if(btn_flag)
-                    {
-                        ggambbak = 0b11;
-                        fnd_shape = BOTH;
-                        if(Timer_read(TIMER2) == 0 && blink_flag == 0)
-                        {
-                            blink_flag = 1;
-                            led_data ^= ggambbak;
-                            fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
-                        }
-                        else if(Timer_read(TIMER2) != 0) blink_flag = 0;
+                    switch(blinker_state){
+                        case HAZARD_BLINK_STATE:
+                            ggambbak = 0b11;
+                            fnd_shape = HAZARD;
+                            if(Timer_read(TIMER2) == 0 && blink_flag == 0)
+                            {
+                                blink_flag = 1;
+                                led_data ^= ggambbak;
+                                fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
+                            }
+                            else if(Timer_read(TIMER2) != 0) blink_flag = 0;
 
-                        delay(10);
+                            delay(10);
 
-                        BLINK_init(BUZZER, 49);
-                        LED_write(GPIOA, led_data);
-                        FND_init(FND,fnd_blink);
-                        FND_writeData(FND, fnd_shape);
-                    }
-                    else if(sw_flag1)
-                    {
-                        ggambbak = 0b01;
-                        fnd_shape = RIGHT;
-                        if(Timer_read(TIMER2) == 0 && blink_flag == 0)
-                        {
-                            blink_flag = 1;
-                            led_data ^= ggambbak;
-                            fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
-                        }
-                        else if(Timer_read(TIMER2) != 0) blink_flag = 0;
+                            BLINK_init(BUZZER, 49);
+                            LED_write(GPIOA, led_data);
+                            FND_init(FND,fnd_blink);
+                            FND_writeData(FND, fnd_shape);
+                            break;
+                        case RIGHT_BLINK_STATE:
+                            ggambbak = 0b01;
+                            fnd_shape = RIGHT;
+                            if(Timer_read(TIMER2) == 0 && blink_flag == 0)
+                            {
+                                blink_flag = 1;
+                                led_data ^= ggambbak;
+                                fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
+                            }
+                            else if(Timer_read(TIMER2) != 0) blink_flag = 0;
 
-                        delay(10);
+                            delay(10);
 
-                        BLINK_init(BUZZER, 49);
-                        LED_write(GPIOA, led_data);
-                        FND_init(FND,fnd_blink);
-                        FND_writeData(FND, fnd_shape); // debugging
-                    }
-                    else if(sw_flag2)
-                    {
-                        ggambbak = 0b10;
-                        fnd_shape = LEFT;
-                        if(Timer_read(TIMER2) == 0 && blink_flag == 0)
-                        {
-                            blink_flag = 1;
-                            led_data ^= ggambbak;
-                            fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
-                        }
-                        else if(Timer_read(TIMER2) != 0) blink_flag = 0;
+                            BLINK_init(BUZZER, 49);
+                            LED_write(GPIOA, led_data);
+                            FND_init(FND,fnd_blink);
+                            FND_writeData(FND, fnd_shape);
+                            break;
+                        case LEFT_BLINK_STAT:
+                            ggambbak = 0b10;
+                            fnd_shape = LEFT;
+                            if(Timer_read(TIMER2) == 0 && blink_flag == 0)
+                            {
+                                blink_flag = 1;
+                                led_data ^= ggambbak;
+                                fnd_blink = (led_data & ggambbak) == 0 ? POWER_OFF : POWER_ON;
+                            }
+                            else if(Timer_read(TIMER2) != 0) blink_flag = 0;
 
-                        delay(10);
+                            delay(10);
 
-                        BLINK_init(BUZZER, 49);
-                        LED_write(GPIOA, led_data);
-                        FND_init(FND,fnd_blink);
-                        FND_writeData(FND, fnd_shape); // debugging
+                            BLINK_init(BUZZER, 49);
+                            LED_write(GPIOA, led_data);
+                            FND_init(FND,fnd_blink);
+                            FND_writeData(FND, fnd_shape);
+                            break;
+                        case DEFAULT_STATE: break;
                     }
 
                     switch(Switch_read(GPIOC))
                     {
                         case (1<<0):
-                            sw_flag1 = 1;
+                            blinker_state = LEFT_BLINK_STAT;
                             break;
 
                         case (1<<1):
-                            sw_flag2 = 1;
+                            blinker_state = RIGHT_BLINK_STATE;
                             break;
 
                         case (1<<4):
@@ -288,16 +281,15 @@ int main() {
                             if((Switch_read(GPIOC) == (1<<4)) && (btn_detect == 0))
                             {
                                 btn_detect = 1;
-                                btn_flag ^= 1;
+                                blinker_state ^= HAZARD_BLINK_STATE;
                             }
                             break;
 
                         default:
                             btn_detect = 0;
-                            sw_flag1 = 0;
-                            sw_flag2 = 0;
-                            if(!btn_flag)
+                            if(!(blinker_state == 1))
                             {
+                                blinker_state = DEFAULT_STATE;
                                 led_data = 0b11;
                                 LED_write(GPIOA, led_default);
                                 FND_init(FND,POWER_OFF);
