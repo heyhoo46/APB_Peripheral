@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 #define __IO            volatile
 
@@ -131,14 +132,15 @@ void blink_led_fnd_func(GPIO_TypeDef *GPIOx_LED, GPIO_TypeDef *GPIOx_SWITCH1, GP
 void toggle_led_fnd(TIMER_TypeDef *timerx, volatile uint8_t *ggambbak, volatile uint8_t *blink_flag, volatile uint8_t *led_data, volatile uint8_t *fnd_blink);
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data);
-
+void UART_sendString(UART_TypeDef *UARTx, const char *str);
+void utoa(uint32_t val, char *buf);
 
 #define led_default 0b11
 
 int main() {
+    char buf[64];
     LED_init(GPIOA);
     Switch_init(GPIOB);
-    Switch_init(GPIOC);
 
     FND_init(FND, POWER_ON);
     FND_writeDot(FND, 0);
@@ -304,8 +306,25 @@ int main() {
                 FND_init(FND, POWER_ON);
                 break;
             }
-            case (1<<2): UART_send(UART, '1');
-            break;
+            case (1 << 2): {
+                uint32_t ultra_val = Ultra_read(ULTRA);
+                uint32_t dht_val   = DHT_read(DHT);
+            
+                char str1[16], str2[16];
+            
+                utoa(ultra_val, str1);
+                utoa(dht_val, str2);
+            
+                UART_sendString(UART, "Ultra: ");
+                UART_sendString(UART, str1);
+                UART_sendString(UART, " mm, DHT: ");
+                UART_sendString(UART, str2);
+                UART_sendString(UART, "\r\n");
+            
+                break;
+            }
+             
+    
 
             default:
                 FND_writeData(FND, 7777);
@@ -405,5 +424,36 @@ void DOT3_Timer(uint32_t *DOT3, uint32_t *btn_flag2){
 }
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data) {  
+    while (!(UARTx->FSR & (1<<1)));// UART TX READY 
     UARTx->FWD = data;
 }
+
+
+void utoa(uint32_t val, char *buf) {
+    char temp[10];
+    int i = 0, j = 0;
+
+    if (val == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return;
+    }
+
+    while (val > 0) {
+        temp[i++] = (val % 10) + '0';
+        val /= 10;
+    }
+
+    // 역순으로 복사
+    while (i > 0) {
+        buf[j++] = temp[--i];
+    }
+    buf[j] = '\0';
+}
+
+void UART_sendString(UART_TypeDef *UARTx, const char *str) {
+    while (*str) {
+        UART_send(UARTx, *str++);
+    }
+}
+
