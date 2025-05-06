@@ -9,20 +9,20 @@ module APB_Master (
     output logic [31:0] PWDATA,
     output logic        PWRITE,
     output logic        PENABLE,
-    output logic        PSEL0,
-    output logic        PSEL1,
-    output logic        PSEL2,
-    output logic        PSEL3,
-    output logic        PSEL4,
-    output logic        PSEL5,
-    output logic        PSEL6,
-    output logic        PSEL7,
-    output logic        PSEL8,
-    output logic        PSEL9,
-    output logic        PSEL10,//UART
-    output logic        PSEL11,//TILT
-    output logic        PSEL12,//RGB
-    output logic        PSEL13,//BUZZER
+    output logic        PSEL0,      // RAM
+    output logic        PSEL1,      // TIMER1
+    output logic        PSEL2,      // GPIOA
+    output logic        PSEL3,      // GPIOB
+    output logic        PSEL4,      // GPIOC
+    output logic        PSEL5,      // FND
+    output logic        PSEL6,      // UltraSonic
+    output logic        PSEL7,      // DHT-11
+    output logic        PSEL8,      // BLINK
+    output logic        PSEL9,      // TIMER2
+    output logic        PSEL10,     // UART
+    output logic        PSEL11,     // TILT
+    output logic        PSEL12,     // RGB
+    output logic        PSEL13,     // BUZZER
     input  logic [31:0] PRDATA0,
     input  logic [31:0] PRDATA1,
     input  logic [31:0] PRDATA2,
@@ -201,20 +201,20 @@ module APB_Decoder (
         y = 14'b0;
         if (en) begin
             casex (sel)
-                32'h1000_0xxx: y = 14'b00000000000001;
-                32'h1000_1xxx: y = 14'b00000000000010;
-                32'h1000_2xxx: y = 14'b00000000000100;
-                32'h1000_3xxx: y = 14'b00000000001000;
-                32'h1000_4xxx: y = 14'b00000000010000;
-                32'h1000_5xxx: y = 14'b00000000100000;
-                32'h1000_6xxx: y = 14'b00000001000000;
-                32'h1000_7xxx: y = 14'b00000010000000;
-                32'h1000_8xxx: y = 14'b00000100000000;
-                32'h1000_9xxx: y = 14'b00001000000000;
-                32'h2000_0xxx: y = 14'b00010000000000;///// TAEMIN UART
-                32'h2000_1xxx: y = 14'b00100000000000;///// JISU TILT
-                32'h2000_2xxx: y = 14'b01000000000000;///// JISU RGB
-                32'h2000_3xxx: y = 14'b10000000000000;///// EUN BUZZER
+                32'h1000_0xxx: y = 14'b00000000000001;  // RAM
+                32'h1000_10xx, 32'h1000_11xx, 32'h1000_12xx, 32'h1000_13xx: y = 14'b00000000000010;  // TIMER1
+                32'h1000_14xx, 32'h1000_15xx, 32'h1000_16xx, 32'h1000_17xx: y = 14'b00000000000100;  // GPIOA
+                32'h1000_18xx, 32'h1000_19xx, 32'h1000_1Axx, 32'h1000_1Bxx: y = 14'b00000000001000;  // GPIOB
+                32'h1000_1Cxx, 32'h1000_1Dxx, 32'h1000_1Exx, 32'h1000_1Fxx: y = 14'b00000000010000;  // GPIOC
+                32'h1000_20xx, 32'h1000_21xx, 32'h1000_22xx, 32'h1000_23xx: y = 14'b00000000100000;  // FND
+                32'h1000_24xx, 32'h1000_25xx, 32'h1000_26xx, 32'h1000_27xx: y = 14'b00000001000000;  // UltraSonic
+                32'h1000_28xx, 32'h1000_29xx, 32'h1000_2Axx, 32'h1000_2Bxx: y = 14'b00000010000000;  // DHT-11
+                32'h1000_2Cxx, 32'h1000_2Dxx, 32'h1000_2Exx, 32'h1000_2Fxx: y = 14'b00000100000000;  // BLINK
+                32'h1000_30xx, 32'h1000_31xx, 32'h1000_32xx, 32'h1000_33xx: y = 14'b00001000000000;  // TIMER2
+                32'h1000_34xx, 32'h1000_35xx, 32'h1000_36xx, 32'h1000_37xx: y = 14'b00010000000000;  // UART
+                32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: y = 14'b00100000000000;  // TILT
+                32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: y = 14'b01000000000000;  // RGB
+                32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: y = 14'b10000000000000;  // BUZZER
             endcase
         end
     end
@@ -258,19 +258,19 @@ module APB_Mux (
         rdata = 32'bx;
         casex (sel)
             32'h1000_0xxx: rdata = d0;
-            32'h1000_1xxx: rdata = d1;
-            32'h1000_2xxx: rdata = d2;
-            32'h1000_3xxx: rdata = d3;
-            32'h1000_4xxx: rdata = d4;
-            32'h1000_5xxx: rdata = d5;
-            32'h1000_6xxx: rdata = d6;
-            32'h1000_7xxx: rdata = d7;
-            32'h1000_8xxx: rdata = d8;
-            32'h1000_9xxx: rdata = d9;
-            32'h2000_0xxx: rdata = d10;
-            32'h2000_1xxx: rdata = d11;
-            32'h2000_2xxx: rdata = d12;
-            32'h2000_3xxx: rdata = d13;
+            32'h1000_10xx, 32'h1000_11xx, 32'h1000_12xx, 32'h1000_13xx: rdata = d1;
+            32'h1000_14xx, 32'h1000_15xx, 32'h1000_16xx, 32'h1000_17xx: rdata = d2;
+            32'h1000_18xx, 32'h1000_19xx, 32'h1000_1Axx, 32'h1000_1Bxx: rdata = d3;
+            32'h1000_1Cxx, 32'h1000_1Dxx, 32'h1000_1Exx, 32'h1000_1Fxx: rdata = d4;
+            32'h1000_20xx, 32'h1000_21xx, 32'h1000_22xx, 32'h1000_23xx: rdata = d5;
+            32'h1000_24xx, 32'h1000_25xx, 32'h1000_26xx, 32'h1000_27xx: rdata = d6;
+            32'h1000_28xx, 32'h1000_29xx, 32'h1000_2Axx, 32'h1000_2Bxx: rdata = d7;
+            32'h1000_2Cxx, 32'h1000_2Dxx, 32'h1000_2Exx, 32'h1000_2Fxx: rdata = d8;
+            32'h1000_30xx, 32'h1000_31xx, 32'h1000_32xx, 32'h1000_33xx: rdata = d9;
+            32'h1000_34xx, 32'h1000_35xx, 32'h1000_36xx, 32'h1000_37xx: rdata = d10;
+            32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: rdata = d11;
+            32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: rdata = d12;
+            32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: rdata = d13;
         endcase
     end
 
@@ -278,19 +278,19 @@ module APB_Mux (
         ready = 1'b0;
         casex (sel)
             32'h1000_0xxx: ready = r0;
-            32'h1000_1xxx: ready = r1;
-            32'h1000_2xxx: ready = r2;
-            32'h1000_3xxx: ready = r3;
-            32'h1000_4xxx: ready = r4;
-            32'h1000_5xxx: ready = r5;
-            32'h1000_6xxx: ready = r6;
-            32'h1000_7xxx: ready = r7;
-            32'h1000_8xxx: ready = r8;
-            32'h1000_9xxx: ready = r9;
-            32'h2000_0xxx: ready = r10;
-            32'h2000_1xxx: ready = r11;
-            32'h2000_2xxx: ready = r12;
-            32'h2000_3xxx: ready = r13;
+            32'h1000_10xx, 32'h1000_11xx, 32'h1000_12xx, 32'h1000_13xx: ready = r1;
+            32'h1000_14xx, 32'h1000_15xx, 32'h1000_16xx, 32'h1000_17xx: ready = r2;
+            32'h1000_18xx, 32'h1000_19xx, 32'h1000_1Axx, 32'h1000_1Bxx: ready = r3;
+            32'h1000_1Cxx, 32'h1000_1Dxx, 32'h1000_1Exx, 32'h1000_1Fxx: ready = r4;
+            32'h1000_20xx, 32'h1000_21xx, 32'h1000_22xx, 32'h1000_23xx: ready = r5;
+            32'h1000_24xx, 32'h1000_25xx, 32'h1000_26xx, 32'h1000_27xx: ready = r6;
+            32'h1000_28xx, 32'h1000_29xx, 32'h1000_2Axx, 32'h1000_2Bxx: ready = r7;
+            32'h1000_2Cxx, 32'h1000_2Dxx, 32'h1000_2Exx, 32'h1000_2Fxx: ready = r8;
+            32'h1000_30xx, 32'h1000_31xx, 32'h1000_32xx, 32'h1000_33xx: ready = r9;
+            32'h1000_34xx, 32'h1000_35xx, 32'h1000_36xx, 32'h1000_37xx: ready = r10;
+            32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: ready = r11;
+            32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: ready = r12;
+            32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: ready = r13;
         endcase
     end
 endmodule

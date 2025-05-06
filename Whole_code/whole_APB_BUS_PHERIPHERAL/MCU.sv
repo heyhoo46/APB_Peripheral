@@ -3,9 +3,9 @@
 module MCU (
     input  logic       clk,
     input  logic       reset,
+    inout  logic [7:0] GPIOA,
     inout  logic [7:0] GPIOB,
     inout  logic [7:0] GPIOC,
-    inout  logic [7:0] GPIOD,
     output logic [7:0] fndFont,
     output logic [3:0] fndCom,
     output logic       trig,
@@ -36,9 +36,9 @@ module MCU (
     logic        PENABLE;
     logic        PSEL_RAM;
     logic        PSEL_TIMER;
+    logic        PSEL_GPIOA;
     logic        PSEL_GPIOB;
     logic        PSEL_GPIOC;
-    logic        PSEL_GPIOD;
     logic        PSEL_FND;
     logic        PSEL_ULTRA;
     logic        PSEL_DHT;
@@ -48,9 +48,9 @@ module MCU (
     logic        PSEL_BUZZER;
     logic [31:0] PRDATA_RAM;
     logic [31:0] PRDATA_TIMER;
+    logic [31:0] PRDATA_GPIOA;
     logic [31:0] PRDATA_GPIOB;
     logic [31:0] PRDATA_GPIOC;
-    logic [31:0] PRDATA_GPIOD;
     logic [31:0] PRDATA_FND;
     logic [31:0] PRDATA_ULTRA;
     logic [31:0] PRDATA_DHT;
@@ -60,9 +60,9 @@ module MCU (
     logic [31:0] PRDATA_BUZZER;
     logic        PREADY_RAM;
     logic        PREADY_TIMER;
+    logic        PREADY_GPIOA;
     logic        PREADY_GPIOB;
     logic        PREADY_GPIOC;
-    logic        PREADY_GPIOD;
     logic        PREADY_FND;
     logic        PREADY_ULTRA;
     logic        PREADY_DHT;
@@ -106,9 +106,9 @@ module MCU (
         .*,
         .PSEL0  (PSEL_RAM),
         .PSEL1  (PSEL_TIMER),
-        .PSEL2  (PSEL_GPIOB),
-        .PSEL3  (PSEL_GPIOC),
-        .PSEL4  (PSEL_GPIOD),
+        .PSEL2  (PSEL_GPIOA),
+        .PSEL3  (PSEL_GPIOB),
+        .PSEL4  (PSEL_GPIOC),
         .PSEL5  (PSEL_FND),
         .PSEL6  (PSEL_ULTRA),
         .PSEL7  (PSEL_DHT),
@@ -116,13 +116,13 @@ module MCU (
         .PSEL9  (PSEL_TIMER2),
         .PSEL10  (PSEL_UART),
         .PSEL11  (PSEL_TILT),
-        .PSEL12  (PSEL_RGB),
+        .PSEL12  (),
         .PSEL13  (PSEL_BUZZER),
         .PRDATA0(PRDATA_RAM),
         .PRDATA1(PRDATA_TIMER),
-        .PRDATA2(PRDATA_GPIOB),
-        .PRDATA3(PRDATA_GPIOC),
-        .PRDATA4(PRDATA_GPIOD),
+        .PRDATA2(PRDATA_GPIOA),
+        .PRDATA3(PRDATA_GPIOB),
+        .PRDATA4(PRDATA_GPIOC),
         .PRDATA5(PRDATA_FND),
         .PRDATA6(PRDATA_ULTRA),
         .PRDATA7(PRDATA_DHT),
@@ -130,13 +130,13 @@ module MCU (
         .PRDATA9(PRDATA_TIMER2),
         .PRDATA10(PRDATA_UART),
         .PRDATA11(PRDATA_TILT),
-        .PRDATA12(PRDATA_RGB),
+        .PRDATA12(),
         .PRDATA13(PRDATA_BUZZER),
         .PREADY0(PREADY_RAM),
         .PREADY1(PREADY_TIMER),
-        .PREADY2(PREADY_GPIOB),
-        .PREADY3(PREADY_GPIOC),
-        .PREADY4(PREADY_GPIOD),
+        .PREADY2(PREADY_GPIOA),
+        .PREADY3(PREADY_GPIOB),
+        .PREADY4(PREADY_GPIOC),
         .PREADY5(PREADY_FND),
         .PREADY6(PREADY_ULTRA),
         .PREADY7(PREADY_DHT),
@@ -144,7 +144,7 @@ module MCU (
         .PREADY9(PREADY_TIMER2),
         .PREADY10(PREADY_UART),
         .PREADY11(PREADY_TILT),
-        .PREADY12(PREADY_RGB),
+        .PREADY12(),
         .PREADY13(PREADY_BUZZER)
     );
 
@@ -162,6 +162,14 @@ module MCU (
         .PREADY(PREADY_TIMER)
     );
 
+    GPIO_Periph U_GPIOA (
+        .*,
+        .PSEL(PSEL_GPIOA),
+        .PRDATA(PRDATA_GPIOA),
+        .PREADY(PREADY_GPIOA),
+        .inOutPort(GPIOA)
+    );
+
     GPIO_Periph U_GPIOB (
         .*,
         .PSEL(PSEL_GPIOB),
@@ -176,14 +184,6 @@ module MCU (
         .PRDATA(PRDATA_GPIOC),
         .PREADY(PREADY_GPIOC),
         .inOutPort(GPIOC)
-    );
-
-    GPIO_Periph U_GPIOD (
-        .*,
-        .PSEL(PSEL_GPIOD),
-        .PRDATA(PRDATA_GPIOD),
-        .PREADY(PREADY_GPIOD),
-        .inOutPort(GPIOD)
     );
 
     FndController_Periph U_FndController_Periph (
