@@ -127,7 +127,7 @@ uint32_t Timer_read(TIMER_TypeDef *timerx);
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data);
 
-uint32_t value_divide(uint32_t value);
+void value_divide(uint32_t value, uint8_t *acii);
 void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1);
 void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi_integral_1, uint32_t humi_decimal_10, uint32_t humi_decimal_1);
 void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_100, uint32_t dist_10, uint32_t dist_1);
@@ -161,7 +161,7 @@ int main() {
     uint32_t fnd_shape = 0;
     uint32_t led_data = 0b11;
 
-    uint8_t d, i, s, t, e, m, p, h, u = 0;
+    uint8_t acii[4];
 
     while (1) {
         DOT3_Timer(&DOT3, &btn_flag3);
@@ -192,9 +192,9 @@ int main() {
                 FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
-                d, i, s, t = value_divide(temperature);
+                value_divide(temperature,acii);
                 delay(10);
-                UART_Send_distance(UART, d, i, s, t);
+                UART_Send_distance(UART, acii[0], acii[1], acii[2], acii[3]);
                 break;
 
             case (1 << 5):
@@ -202,9 +202,9 @@ int main() {
                 delay(1000);
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
-                t, e, m, p = value_divide(temperature);
+                value_divide(temperature, acii);
                 delay(10);
-                UART_Send_Temp(UART, t, e, m, p);
+                UART_Send_Temp(UART, acii[0], acii[1], acii[2], acii[3]);
 
                 break;
 
@@ -213,9 +213,9 @@ int main() {
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
-                h, u, m, i = value_divide(temperature);
+                value_divide(temperature, acii);
                 delay(10);
-                UART_Send_Humi(UART, h, u, m, i);
+                UART_Send_Humi(UART, acii[0], acii[1], acii[2], acii[3]);
                 break;
 
             case (1 << 3):
@@ -419,20 +419,18 @@ void DOT3_Timer(uint32_t *DOT3, uint32_t *btn_flag2){
 
 void UART_send(UART_TypeDef *UARTx, uint8_t data)
 {  
-    while (!(UARTx->FSR & (1<<1)));// UART TX READY 
+    while ((UARTx->FSR & (1<<1)));// UART TX READY 
     UARTx->FWD = data;
 }
 
-uint32_t value_divide(uint32_t value)
+void value_divide(uint32_t value, uint8_t *ascii)
 {
-    uint8_t acii[5];
-    acii[0] = (value / 1000) % 10;
-    acii[1] = (value / 100) % 10;
-    acii[2] = (value / 10) % 10;
-    acii[3] = value % 10;
-
-    return acii[0],acii[1],acii[2],acii[3];
+    ascii[0] = (value / 1000) % 10;
+    ascii[1] = (value / 100) % 10;
+    ascii[2] = (value / 10) % 10;
+    ascii[3] = value % 10;
 }
+
 
 
 void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1)
