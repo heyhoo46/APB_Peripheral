@@ -19,33 +19,38 @@ typedef struct {
 #define TILT             ((TILT_TypeDef *) TILT_BASEADDR)
 #define GPIOA            ((GPIO_TypeDef *) GPIOA_BASEADDR)
 
-#define LED_PIN          0  // LED 핀
+#define LED_COUNT        6  // LED 개수
 
 void delay(int n);
 void GPIO_init(void);
+void LEDs_on(void);
+void LEDs_off(void);
 
 int main() {
     // GPIO 초기화
     GPIO_init();
     
-    // 시작 표시: LED 3번 깜빡임
+    // 초기 상태에서 모든 LED 끄기
+    LEDs_off();
+    
+    // 시작 표시: 모든 LED 3번 깜빡임
     for(int i = 0; i < 3; i++) {
-        GPIOA->ODR |= (1 << LED_PIN);   // LED 켜기
+        LEDs_on();
         delay(300);
-        GPIOA->ODR &= ~(1 << LED_PIN);  // LED 끄기
+        LEDs_off();
         delay(300);
     }
     
-    // 메인 루프: 틸트 센서 상태에 따라 LED 제어
+    // 메인 루프
     while(1) {
         volatile uint32_t tilt_state = TILT->TILT_REG & 0x01;
         
         if(tilt_state) {
-            // 센서가 기울어진 상태: LED 켜기
-            GPIOA->ODR |= (1 << LED_PIN);
+            // 센서가 기울어진 상태: 모든 LED 켜기
+            LEDs_on();
         } else {
-            // 센서가 기울어지지 않은 상태: LED 끄기
-            GPIOA->ODR &= ~(1 << LED_PIN);
+            // 센서가 기울어지지 않은 상태: 모든 LED 끄기
+            LEDs_off();
         }
         
         // 짧은 지연
@@ -66,10 +71,28 @@ void delay(int n) {
 }
 
 void GPIO_init(void) {
-    // LED 핀을 출력 모드로 설정
-    GPIOA->MODER = 0;
-    GPIOA->MODER |= (1 << LED_PIN);
+    // 모든 핀 초기화 후 LED 핀만 출력으로 설정
+    GPIOA->MODER = 0;  // 모든 핀을 입력 모드로 초기화
     
-    // 초기 상태에서 LED 끄기
-    GPIOA->ODR &= ~(1 << LED_PIN);
+    // LED 핀만 출력 모드로 설정
+    for(int i = 0; i < LED_COUNT; i++) {
+        GPIOA->MODER |= (1 << (i * 2));  // 각 핀마다 01로 설정
+    }
+    
+    // 초기 상태에서 모든 LED 끄기
+    GPIOA->ODR = 0;
+}
+
+void LEDs_on(void) {
+    uint32_t odr_value = GPIOA->ODR;
+    // 하위 6비트만 수정 (LED_COUNT = 6)
+    odr_value = (odr_value & ~0x3F) | 0x3E;  // 0x3F = 0b111111, 0x3E = 0b111110
+    GPIOA->ODR = odr_value;
+}
+
+void LEDs_off(void) {
+    // 모든 LED 끄기 (하위 8비트를 0으로 설정)
+    uint32_t odr_value = GPIOA->ODR;
+    odr_value &= ~0xFF;  // 하위 8비트를 0으로 설정
+    GPIOA->ODR = odr_value;
 }
