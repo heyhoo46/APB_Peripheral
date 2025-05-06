@@ -191,7 +191,6 @@ int main() {
                 break;
 
             case (1 << 6):
-                uint8_t ascii_dist[4] = {0};
                 delay(500);
                 Ultra_init(ULTRA, POWER_ON);
                 delay(10);
@@ -202,28 +201,23 @@ int main() {
                 BLINK_init(BUZZER, distance);
                 value_divide(distance, ascii_dist);
                 delay(100);
-                UART_Send_distance(UART, ascii_dist[3], ascii_dist[2], ascii_dist[1], ascii_dist[0]);
+                UART_Send_distance(UART, get_thousands_place(&distance), get_hundreds_place(&distance), get_tens_place(&distance), get_ones_place(&distance));
                 break;
 
             case (1 << 5):
-                uint8_t ascii_temp[4] = {0};
                 DHT_init(DHT, TEMPERATURE);
                 delay(1000);
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
-                //value_divide(temperature, ascii_temp);
                 delay(100);
-                //UART_Send_Temp(UART, ascii_temp[3], ascii_temp[2], ascii_temp[1], ascii_temp[0]);
                 UART_Send_Temp(UART, get_thousands_place(&temperature), get_hundreds_place(&temperature), get_tens_place(&temperature), get_ones_place(&temperature));
                 break;
 
             case (1 << 4):
-                uint8_t ascii_humid[4] = {0};
                 DHT_init(DHT, HUMIDITY);
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
-                //value_divide(humidity, ascii_humid);
                 delay(100);
                 UART_Send_Humi(UART, get_thousands_place(&humidity), get_hundreds_place(&humidity), get_tens_place(&humidity), get_ones_place(&humidity));
                 break;
