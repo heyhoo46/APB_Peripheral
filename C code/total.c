@@ -91,7 +91,7 @@ typedef struct {
 #define DEFAULT_STATE           0
 #define HAZARD_BLINK_STATE      1
 #define RIGHT_BLINK_STATE       2
-#define LEFT_BLINK_STAT         3
+#define LEFT_BLINK_STATE         3
 
 
 #define F_CPU 100000000
@@ -192,9 +192,9 @@ int main() {
                 FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
-                value_divide(temperature,acii);
+                value_divide(distance, acii);
                 delay(10);
-                UART_Send_distance(UART, acii[0], acii[1], acii[2], acii[3]);
+                UART_Send_distance(UART, acii[3], acii[2], acii[1], acii[0]);
                 break;
 
             case (1 << 5):
@@ -204,7 +204,7 @@ int main() {
                 FND_writeData(FND, temperature);
                 value_divide(temperature, acii);
                 delay(10);
-                UART_Send_Temp(UART, acii[0], acii[1], acii[2], acii[3]);
+                UART_Send_Temp(UART, acii[3], acii[2], acii[1], acii[0]);
 
                 break;
 
@@ -213,9 +213,9 @@ int main() {
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
-                value_divide(temperature, acii);
+                value_divide(humidity, acii);
                 delay(10);
-                UART_Send_Humi(UART, acii[0], acii[1], acii[2], acii[3]);
+                UART_Send_Humi(UART, acii[3], acii[2], acii[1], acii[0]);
                 break;
 
             case (1 << 3):
@@ -244,7 +244,7 @@ int main() {
                             FND_init(FND,fnd_blink);
                             FND_writeData(FND, fnd_shape);
                             break;
-                        case RIGHT_BLINK_STATE:
+                        case LEFT_BLINK_STATE:
                             ggambbak = 0b01;
                             fnd_shape = RIGHT;
                             if(Timer_read(TIMER2) == 0 && blink_flag == 0)
@@ -262,7 +262,7 @@ int main() {
                             FND_init(FND,fnd_blink);
                             FND_writeData(FND, fnd_shape);
                             break;
-                        case LEFT_BLINK_STAT:
+                        case RIGHT_BLINK_STATE:
                             ggambbak = 0b10;
                             fnd_shape = LEFT;
                             if(Timer_read(TIMER2) == 0 && blink_flag == 0)
@@ -286,7 +286,7 @@ int main() {
                     switch(sw_btn)
                     {
                         case (1<<0):
-                            blinker_state = LEFT_BLINK_STAT;
+                            blinker_state = LEFT_BLINK_STATE;
                             break;
 
                         case (1<<1):
@@ -425,12 +425,26 @@ void UART_send(UART_TypeDef *UARTx, uint8_t data)
 
 void value_divide(uint32_t value, uint8_t *ascii)
 {
-    ascii[0] = (value / 1000) % 10;
-    ascii[1] = (value / 100) % 10;
-    ascii[2] = (value / 10) % 10;
-    ascii[3] = value % 10;
-}
+    ascii[3] = 0;
+    while (value >= 1000) {
+        value -= 1000;
+        ascii[3]++;
+    }
 
+    ascii[2] = 0;
+    while (value >= 100) {
+        value -= 100;
+        ascii[2]++;
+    }
+
+    ascii[1] = 0;
+    while (value >= 10) {
+        value -= 10;
+        ascii[1]++;
+    }
+
+    ascii[0] = value;
+}
 
 
 void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1)
