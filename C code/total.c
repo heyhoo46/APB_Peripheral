@@ -132,6 +132,14 @@ void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp
 void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi_integral_1, uint32_t humi_decimal_10, uint32_t humi_decimal_1);
 void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_100, uint32_t dist_10, uint32_t dist_1);
 
+int get_thousands_place(uint32_t *value);
+int get_hundreds_place(uint32_t *value);
+int get_tens_place(uint32_t *value);
+int get_ones_place(uint32_t *value);
+
+int tilt_read(TILT_TypeDef *tilt);
+
+
 #define led_default 0b11
 
 int main() {
@@ -203,10 +211,10 @@ int main() {
                 delay(1000);
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
-                value_divide(temperature, ascii_temp);
+                //value_divide(temperature, ascii_temp);
                 delay(100);
-                UART_Send_Temp(UART, ascii_temp[3], ascii_temp[2], ascii_temp[1], ascii_temp[0]);
-
+                //UART_Send_Temp(UART, ascii_temp[3], ascii_temp[2], ascii_temp[1], ascii_temp[0]);
+                UART_Send_Temp(UART, get_thousands_place(&temperature), get_hundreds_place(&temperature), get_tens_place(&temperature), get_ones_place(&temperature));
                 break;
 
             case (1 << 4):
@@ -215,9 +223,9 @@ int main() {
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
-                value_divide(humidity, ascii_humid);
+                //value_divide(humidity, ascii_humid);
                 delay(100);
-                UART_Send_Humi(UART, ascii_humid[3], ascii_humid[2], ascii_humid[1], ascii_humid[0]);
+                UART_Send_Humi(UART, get_thousands_place(&humidity), get_hundreds_place(&humidity), get_tens_place(&humidity), get_ones_place(&humidity));
                 break;
 
             case (1 << 3):
@@ -322,6 +330,16 @@ int main() {
                 FND_init(FND, POWER_ON);
                 break;
             
+            case (1<<2):
+                if(tilt_read(TILT))
+                {
+                    LED_write(GPIOA,(1<<7));
+                    UART_Send_tilt_msg(UART);
+                    delay(500);
+                }
+                else LED_write(GPIOA, 0);
+
+
             default:
                 FND_writeData(FND, 7777);
                 break;
@@ -329,8 +347,6 @@ int main() {
     }
     return 0;
 }
-
-
 
 void delay(int n){
     uint32_t temp = 0;
@@ -519,5 +535,66 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
     for (int i = 0; text_string[i] != 0x00; i++) {
         UART_send(uart, text_string[i]);
     }
+}
+
+void UART_Send_tilt_msg(UART_TypeDef *uart)
+{
+    uint32_t text_string[] = {
+        'w', // d
+        'a', // i
+        'r',        // s
+        'n', // t
+        'i', // :             
+        'n', // :             
+        'g', // :             
+        '!', // :             
+        '!', // :             
+        0x0A, // \n (newline)
+        0x00  // NULL (string terminator)
+    };
     
+    for (int i = 0; text_string[i] != 0x00; i++) {
+        UART_send(uart, text_string[i]);
+    }
+}
+
+int get_thousands_place(uint32_t *value)
+{
+    int k = 0;
+    while (*value >= 1000) {
+        *value -= 1000;
+        k++;
+    }
+    return k;
+}
+
+int get_hundreds_place(uint32_t *value)
+{
+    int k = 0;
+    while (*value >= 100) {
+        *value -= 100;
+        k++;
+    }
+    return k;
+}
+
+int get_tens_place(uint32_t *value)
+{
+    int k = 0;
+    while (*value >= 10) {
+        *value -= 10;
+        k++;
+    }
+    return k;
+}
+
+int get_ones_place(uint32_t *value)
+{
+    int k = 0;
+    return k = *value;
+}
+
+int tilt_read(TILT_TypeDef *tilt)
+{
+    return (tilt->TILT_REG & 0x01);
 }
