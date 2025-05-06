@@ -161,7 +161,6 @@ int main() {
     uint32_t fnd_shape = 0;
     uint32_t led_data = 0b11;
 
-    uint8_t acii[4];
 
     while (1) {
         DOT3_Timer(&DOT3, &btn_flag3);
@@ -184,6 +183,7 @@ int main() {
                 break;
 
             case (1 << 6):
+                uint8_t ascii_dist[4] = {0};
                 delay(500);
                 Ultra_init(ULTRA, POWER_ON);
                 delay(10);
@@ -192,30 +192,32 @@ int main() {
                 FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
-                value_divide(distance, acii);
+                value_divide(distance, ascii_dist);
                 delay(100);
-                UART_Send_distance(UART, acii[3], acii[2], acii[1], acii[0]);
+                UART_Send_distance(UART, ascii_dist[3], ascii_dist[2], ascii_dist[1], ascii_dist[0]);
                 break;
 
             case (1 << 5):
+                uint8_t ascii_temp[4] = {0};
                 DHT_init(DHT, TEMPERATURE);
                 delay(1000);
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
-                value_divide(temperature, acii);
+                value_divide(temperature, ascii_temp);
                 delay(100);
-                UART_Send_Temp(UART, acii[3], acii[2], acii[1], acii[0]);
+                UART_Send_Temp(UART, ascii_temp[3], ascii_temp[2], ascii_temp[1], ascii_temp[0]);
 
                 break;
 
             case (1 << 4):
+                uint8_t ascii_humid[4] = {0};
                 DHT_init(DHT, HUMIDITY);
                 delay(1000);
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
-                value_divide(humidity, acii);
+                value_divide(humidity, ascii_humid);
                 delay(100);
-                UART_Send_Humi(UART, acii[3], acii[2], acii[1], acii[0]);
+                UART_Send_Humi(UART, ascii_humid[3], ascii_humid[2], ascii_humid[1], ascii_humid[0]);
                 break;
 
             case (1 << 3):
