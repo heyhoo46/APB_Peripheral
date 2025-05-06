@@ -138,6 +138,7 @@ void UART_send(UART_TypeDef *UARTx, uint8_t data);
 int main() {
     LED_init(GPIOA);
     Switch_init(GPIOB);
+    Switch_init(GPIOC);
 
     FND_init(FND, POWER_ON);
     FND_writeDot(FND, 0);
@@ -266,7 +267,7 @@ int main() {
                         FND_writeData(FND, fnd_shape); // debugging
                     }
 
-                    switch(Switch_read(GPIOA))
+                    switch(Switch_read(GPIOC))
                     {
                         case (1<<0):
                             sw_flag1 = 1;
@@ -278,7 +279,7 @@ int main() {
 
                         case (1<<4):
                             delay(10);
-                            if((Switch_read(GPIOA) == (1<<4)) && (btn_detect == 0))
+                            if((Switch_read(GPIOC) == (1<<4)) && (btn_detect == 0))
                             {
                                 btn_detect = 1;
                                 btn_flag ^= 1;
