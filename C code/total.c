@@ -131,6 +131,7 @@ void value_divide(uint32_t value, uint8_t *acii);
 void UART_Send_Temp(UART_TypeDef *uart, uint32_t temp_integral_10, uint32_t temp_integral_1, uint32_t temp_decimal_10, uint32_t temp_decimal_1);
 void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi_integral_1, uint32_t humi_decimal_10, uint32_t humi_decimal_1);
 void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_100, uint32_t dist_10, uint32_t dist_1);
+void UART_Send_tilt_msg(UART_TypeDef *uart);
 
 int get_thousands_place(uint32_t *value);
 int get_hundreds_place(uint32_t *value);
@@ -199,7 +200,6 @@ int main() {
                 FND_writeData(FND, distance);
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
-                value_divide(distance, ascii_dist);
                 delay(100);
                 UART_Send_distance(UART, get_thousands_place(&distance), get_hundreds_place(&distance), get_tens_place(&distance), get_ones_place(&distance));
                 break;
@@ -514,7 +514,7 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
     uint32_t text_string[] = {
         'd', // d
         'i', // i
-        's',        // s
+        's', // s
         't', // t
         ':', // :                    
         '0' + dist_1000,  // 1000
@@ -534,15 +534,15 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
 void UART_Send_tilt_msg(UART_TypeDef *uart)
 {
     uint32_t text_string[] = {
-        'w', // d
-        'a', // i
-        'r',        // s
-        'n', // t
-        'i', // :             
-        'n', // :             
-        'g', // :             
-        '!', // :             
-        '!', // :             
+        'w', // w
+        'a', // a
+        'r', // r
+        'n', // n
+        'i', // i             
+        'n', // n             
+        'g', // g             
+        '!', // !             
+        '!', // !             
         0x0A, // \n (newline)
         0x00  // NULL (string terminator)
     };
