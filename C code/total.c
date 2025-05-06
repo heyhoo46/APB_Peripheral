@@ -193,7 +193,7 @@ int main() {
                 BLINK_init(BLINK, distance);
                 BLINK_init(BUZZER, distance);
                 value_divide(distance, acii);
-                delay(10);
+                delay(100);
                 UART_Send_distance(UART, acii[3], acii[2], acii[1], acii[0]);
                 break;
 
@@ -203,7 +203,7 @@ int main() {
                 temperature = DHT_read(DHT);
                 FND_writeData(FND, temperature);
                 value_divide(temperature, acii);
-                delay(10);
+                delay(100);
                 UART_Send_Temp(UART, acii[3], acii[2], acii[1], acii[0]);
 
                 break;
@@ -214,7 +214,7 @@ int main() {
                 humidity = DHT_read(DHT);
                 FND_writeData(FND, humidity);
                 value_divide(humidity, acii);
-                delay(10);
+                delay(100);
                 UART_Send_Humi(UART, acii[3], acii[2], acii[1], acii[0]);
                 break;
 
