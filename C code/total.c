@@ -549,6 +549,8 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
 }
 
 
+
+
 int get_thousands_place(uint32_t *value)
 {
     int k = 0;
