@@ -244,7 +244,8 @@ module MCU (
         .*,
         .PSEL  (PSEL_TILT),
         .PRDATA(PRDATA_TILT),
-        .PREADY(PREADY_TILT)
+        .PREADY(PREADY_TILT),
+        .tilt_sensor(tilt_sensor)
     );
 
 
