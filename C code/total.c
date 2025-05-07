@@ -59,7 +59,7 @@ typedef struct {
 
 #define TIMER2_BASEADDR     (APB_BASEADDR + 0x3000)
 #define UART_BASEADDR       (APB_BASEADDR + 0x3400)
-#define TILT_BASEADDR       (APB_BASEADDR + 0x4400)
+#define TILT_BASEADDR       (APB_BASEADDR + 0x3800)
 #define NOTHING_BASEADDR    (APB_BASEADDR + 0x3C00)
 #define BUZZER_BASEADDR     (APB_BASEADDR + 0x4000)
 
@@ -345,7 +345,18 @@ int main() {
                         //UART_Send_tilt_msg(UART);
                         delay(500);
                     }
-                    else LED_write(GPIOA, 0);
+                    else {
+                        LED_write(GPIOA, 0);
+                        UART_send(UART, 's');
+                        UART_send(UART, 'a');
+                        UART_send(UART, 'f');
+                        UART_send(UART, 'e');
+                        UART_send(UART, '!');
+                        UART_send(UART, '!');
+                        UART_send(UART, 0x0A);
+                        //UART_Send_tilt_msg(UART);
+                        delay(500);
+                    }
                 }
                 FND_init(FND, POWER_ON);
                 break;
@@ -536,9 +547,10 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
         ':', // :                    
         '0' + dist_1000,  // 1000
         '0' + dist_100,   // 100
-        '.',
         '0' + dist_10,    // 10
         '0' + dist_1,     // 1
+        'c',
+        'm',
         0x0A, // \n (newline)
         0x00  // NULL (string terminator)
     };
@@ -547,8 +559,6 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
         UART_send(uart, text_string[i]);
     }
 }
-
-
 
 
 int get_thousands_place(uint32_t *value)
