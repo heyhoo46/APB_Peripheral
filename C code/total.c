@@ -548,26 +548,6 @@ void UART_Send_distance(UART_TypeDef *uart, uint32_t dist_1000, uint32_t dist_10
     }
 }
 
-void UART_Send_tilt_msg(UART_TypeDef *uart)
-{
-    uint32_t text_string[] = {
-        'w', // w
-        'a', // a
-        'r', // r
-        'n', // n
-        'i', // i             
-        'n', // n             
-        'g', // g             
-        '!', // !             
-        '!', // !             
-        0x0A, // \n (newline)
-        0x00  // NULL (string terminator)
-    };
-    
-    for (int i = 0; text_string[i] != 0x00; i++) {
-        UART_send(uart, text_string[i]);
-    }
-}
 
 int get_thousands_place(uint32_t *value)
 {
