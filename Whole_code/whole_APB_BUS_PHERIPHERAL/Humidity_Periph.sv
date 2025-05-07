@@ -240,10 +240,10 @@ module Humidity_IP (
                             bit_count_next = 0;
                             if (data_buffer[7:0] == (data_buffer[39:32] + data_buffer[31:24] + data_buffer[23:16] + data_buffer[15:8])) begin
                                 humidity_next = {
-                                    data_buffer[31:24], data_buffer[39:32]
+                                    data_buffer[39:32], data_buffer[31:24]
                                 };
                                 temperature_next = {
-                                    data_buffer[15:8], data_buffer[23:16]
+                                    data_buffer[23:16], data_buffer[15:8]
                                 };
                             end else begin
                                 humidity_next = 16'd404;

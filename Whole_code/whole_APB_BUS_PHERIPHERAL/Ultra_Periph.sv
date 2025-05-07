@@ -105,13 +105,14 @@ module Ultrasonic_IP (
     logic o_PCLK;
     logic new_data_ready, new_data_ready_next;
 
-    median_filter_5samples #(.DATA_BITS($clog2(400))) udr_filter(
+    kalman_filter #(.DATA_BITS($clog2(400))) udr_filter (
         .clk(PCLK),
         .reset(PRESET),
-        .new_data_ready(new_data_ready),  //  done 
+        .new_data_ready(new_data_ready),
         .data_in(centi_reg),
         .data_out(udr)
     );
+
 
 
     clock_divider #(
@@ -199,8 +200,10 @@ module Ultrasonic_IP (
 
 endmodule
 
-module median_filter_5samples #(
-    parameter DATA_BITS = 12
+module kalman_filter #(
+    parameter DATA_BITS = 9,
+    parameter Q = 16,   // 프로세스 노이즈
+    parameter R = 32    // 측정 노이즈
 ) (
     input  logic clk,
     input  logic reset,
@@ -209,39 +212,32 @@ module median_filter_5samples #(
     output logic [DATA_BITS-1:0] data_out
 );
 
-    logic [DATA_BITS-1:0] buffer[4:0];
-    logic [DATA_BITS-1:0] sorted[4:0];
+    logic [DATA_BITS+7:0] x_est, x_pred;
+    logic [DATA_BITS+7:0] P, P_pred, K;
+    logic [DATA_BITS-1:0] z;
 
-    integer i;
-
-    // Shift register for latest 5 samples
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            for (i = 0; i < 5; i = i + 1) begin
-                buffer[i] <= 0;
-            end
-            data_out <= 0;
+            x_est <= 0;
+            P <= 1 << 4;  // 초기 오차
         end else if (new_data_ready) begin
-            buffer[0] <= buffer[1];
-            buffer[1] <= buffer[2];
-            buffer[2] <= buffer[3];
-            buffer[3] <= buffer[4];
-            buffer[4] <= data_in;
+            // 예측 단계
+            x_pred = x_est;
+            P_pred = P + Q;
 
-            // Copy to sorted array
-            for (i = 0; i < 5; i = i + 1)
-                sorted[i] = buffer[i];
+            // 칼만 이득
+            K = (P_pred << 8) / (P_pred + R);  // Q8.8로 표현
 
-            // Simple bubble sort for 5 elements
-            for (i = 0; i < 4; i = i + 1) begin
-                if (sorted[0] > sorted[1]) begin sorted[0] = sorted[1]; sorted[1] = buffer[0]; end
-                if (sorted[1] > sorted[2]) begin sorted[1] = sorted[2]; sorted[2] = buffer[1]; end
-                if (sorted[2] > sorted[3]) begin sorted[2] = sorted[3]; sorted[3] = buffer[2]; end
-                if (sorted[3] > sorted[4]) begin sorted[3] = sorted[4]; sorted[4] = buffer[3]; end
-            end
+            // 측정 입력
+            z = data_in;
 
-            data_out <= sorted[2]; // 중앙값
+            // 갱신 단계
+            x_est = x_pred + ((K * (z - x_pred[DATA_BITS-1:0])) >> 8);
+            P = ((1 << 8) - K) * P_pred >> 8;
+
         end
     end
+
+    assign data_out = x_est[DATA_BITS-1:0];
 
 endmodule

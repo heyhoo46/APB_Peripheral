@@ -47,12 +47,13 @@ typedef struct {
 } TILT_TypeDef;
 
 #define APB_BASEADDR        0x10000000
+
 #define TIMER_BASEADDR      (APB_BASEADDR + 0x1000)
 #define GPIOA_BASEADDR      (APB_BASEADDR + 0x1400)
 #define GPIOB_BASEADDR      (APB_BASEADDR + 0x1800)
 #define GPIOC_BASEADDR      (APB_BASEADDR + 0x1C00)
-#define FND_BASEADDR        (APB_BASEADDR + 0x2000)
 
+#define FND_BASEADDR        (APB_BASEADDR + 0x2000)
 #define ULTRA_BASEADDR      (APB_BASEADDR + 0x2400)
 #define DHT_BASEADDR        (APB_BASEADDR + 0x2800)
 #define BLINK_BASEADDR      (APB_BASEADDR + 0x2C00)
@@ -61,6 +62,7 @@ typedef struct {
 #define UART_BASEADDR       (APB_BASEADDR + 0x3400)
 #define TILT_BASEADDR       (APB_BASEADDR + 0x3800)
 #define NOTHING_BASEADDR    (APB_BASEADDR + 0x3C00)
+
 #define BUZZER_BASEADDR     (APB_BASEADDR + 0x4000)
 
 #define TIMER            ((TIMER_TypeDef *) TIMER_BASEADDR)
