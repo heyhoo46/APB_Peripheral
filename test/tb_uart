@@ -1,0 +1,268 @@
+`timescale 1ns / 1ps
+
+interface intf(input bit PCLK, PRESET);
+
+    // APB Interface Signals
+    logic [ 3:0] PADDR;
+    logic [31:0] PWDATA;
+    logic        PWRITE;
+    logic        PENABLE;
+    logic        PSEL;
+    logic [31:0] PRDATA;
+    logic        PREADY;
+    // inport signals
+    logic        tx;
+    logic         rx;
+
+endinterface //ram_intf
+
+class transaction;
+        // APB Interface Signals
+    rand logic [ 3:0] PADDR;
+    rand logic [31:0] PWDATA;
+    rand logic        PWRITE;
+    rand logic        PENABLE;
+    rand logic        PSEL;
+    logic [31:0] PRDATA;
+    logic        PREADY;
+    // inport signals
+    logic        tx;
+    logic        rx;
+
+    task  display(string name);
+        $display("[%s] PADDR=%h, PWDATA=%h, PWRITE = %d, PENABLE=%h, PSEL = %h, PRDATA = %h, PREADY = %h, tx = %h", name, PADDR, PWDATA, PWRITE, PENABLE, PSEL, PRDATA, PREADY, tx);
+    endtask //
+
+    constraint c1{
+        PADDR == 4'h4;
+        PWDATA[31:4] == 28'h0;
+    }
+
+endclass //transaction
+
+class generator;
+    mailbox #(transaction) GenToDrv_mbox;
+    event gen_next_event;
+
+    function new(mailbox #(transaction) GenToDrv_mbox, event gen_next_event);
+        this.GenToDrv_mbox = GenToDrv_mbox;
+        this.gen_next_event = gen_next_event;
+    endfunction //new()
+
+    task run (int repeat_counter);
+        transaction tr;
+        repeat(repeat_counter) begin
+            tr = new();
+            if (!tr.randomize()) begin
+                $error("Randomization failed !!!");
+            end
+            else begin
+                $display("-----------------------------------------------");
+            end
+            tr.display("GEN");
+            GenToDrv_mbox.put(tr);
+            #20;
+            @(gen_next_event);
+        end
+    endtask //automatic
+endclass //generator
+
+class driver;
+    mailbox #(transaction) GenToDrv_mbox;
+    virtual intf uart_if;
+
+    function new(mailbox #(transaction) GenToDrv_mbox, virtual intf uart_if);
+        this.GenToDrv_mbox = GenToDrv_mbox;
+        this.uart_if = uart_if;
+    endfunction //new()
+
+    task run();
+        transaction tr;
+        forever begin
+            GenToDrv_mbox.get(tr);
+            tr.display("DRV");
+    
+            // Address phase
+            uart_if.PADDR  <= tr.PADDR;
+            uart_if.PWDATA <= tr.PWDATA;
+            uart_if.PWRITE <= 1'b1;
+            uart_if.PSEL   <= 1'b1;
+            uart_if.PENABLE <= 1'b0;
+            @(posedge uart_if.PCLK);
+            // Data phase
+            uart_if.PADDR  <= tr.PADDR;
+            uart_if.PWDATA <= tr.PWDATA;
+            uart_if.PWRITE <= 1'b1;
+            uart_if.PSEL   <= 1'b1;
+            uart_if.PENABLE <= 1'b1;
+            @(posedge uart_if.PCLK);
+    
+            // Wait for ready
+            wait (uart_if.PREADY == 1'b1);
+            // Cleanup phase
+            @(posedge uart_if.PCLK);
+            uart_if.PENABLE <= 1'b0;
+            uart_if.PSEL    <= 1'b0;
+            @(posedge uart_if.PCLK);
+        end
+    endtask
+endclass //driver
+
+class monitor;
+    mailbox #(transaction) MonToSCB_mbox;
+    virtual intf uart_if;
+
+    function new(mailbox #(transaction) MonToSCB_mbox, virtual intf uart_if);
+        this.MonToSCB_mbox = MonToSCB_mbox;
+        this.uart_if = uart_if;
+    endfunction //new()
+
+    task run();
+        transaction tr;
+        forever begin
+            tr = new();
+            @(posedge uart_if.PCLK);
+
+            if(uart_if.PENABLE && uart_if.PREADY && uart_if.PSEL) begin
+
+                tr.PADDR = uart_if.PADDR;
+                tr.PWDATA = uart_if.PWDATA;
+                tr.PWRITE = uart_if.PWRITE;
+                tr.PENABLE = uart_if.PENABLE;
+                tr.PSEL = uart_if.PSEL;
+                tr.PRDATA = uart_if.PRDATA;
+                tr.PREADY = uart_if.PREADY;
+                tr.tx = uart_if.PREADY;
+                tr.display("MON");
+                MonToSCB_mbox.put(tr);
+           end
+        end
+    endtask //run
+endclass //monitor
+
+class scoreboard;
+    event gen_next_event;
+    mailbox #(transaction) MonToSCB_mbox;
+    virtual intf uart_if;
+
+    logic [9:0] ref_tx;
+    integer i;
+    integer pass;
+    integer fail;
+    localparam BAUD_PERIOD = ((100_000_000)/(9600*16))*10*16;
+
+    function new(mailbox #(transaction) MonToSCB_mbox, event gen_next_event, virtual intf uart_if);
+        this.MonToSCB_mbox = MonToSCB_mbox;
+        this.gen_next_event = gen_next_event;
+        this.uart_if = uart_if;
+    endfunction
+
+    task send_byte(input logic [7:0] data);
+        // Start bit
+        ref_tx[0] = 0;
+
+        // Data bits (LSB first)
+        for (int i = 0; i < 8; i++) begin
+            ref_tx[i+1] = data[i];
+        end
+
+        // Stop bit
+        ref_tx[9] = 1;
+        
+    endtask
+
+    task run();
+        transaction tr;
+        bit ref_bit;
+
+        forever begin
+            MonToSCB_mbox.get(tr);
+            tr.display("SCB");
+            send_byte(tr.PWDATA); 
+            i = 0;
+                        
+            wait(uart_if.tx == 0);
+
+            repeat(10) begin
+                $display("tx %d bit", i+1);
+
+                if (ref_tx[i] === uart_if.tx) begin
+                    $display("PASS: ref = %b, dut = %b", ref_tx[i], uart_if.tx);
+                end
+                else begin
+                    $display("FAIL: ref=%b, dut=%b", ref_tx[i], uart_if.tx);
+                end
+                #BAUD_PERIOD;
+                i = i + 1;
+            end
+            -> gen_next_event;
+        end
+    endtask
+endclass
+
+class environment;
+    mailbox #(transaction) GenToDrv_mbox;
+    mailbox #(transaction) MonToSCB_mbox;
+
+    event gen_next_event;
+
+    generator uart_gen;
+    driver uart_drv;
+    monitor uart_mon;
+    scoreboard uart_scb;
+    
+    function new(virtual intf uart_if);
+        GenToDrv_mbox = new();
+        MonToSCB_mbox = new();
+        uart_gen = new(GenToDrv_mbox, gen_next_event);
+        uart_drv = new(GenToDrv_mbox, uart_if);
+        uart_mon = new(MonToSCB_mbox, uart_if);
+        uart_scb = new(MonToSCB_mbox, gen_next_event, uart_if);
+    endfunction //new()
+
+    task run(int count);
+        fork
+            uart_gen.run(count);
+            uart_drv.run();
+            uart_mon.run();
+            uart_scb.run();
+        join_any
+    endtask //run
+endclass //environment
+
+module tb_uart();
+    logic PCLK;
+    logic PRESET;
+
+    environment env;
+    intf uart_if(PCLK, PRESET);  // 실제 intf 객체 생성
+
+    UART_Periph dut(
+        .PCLK(PCLK),
+        .PRESET(PRESET),
+        // APB Interface Signals
+        .PADDR(uart_if.PADDR),
+        .PWDATA(uart_if.PWDATA),
+        .PWRITE(uart_if.PWRITE),
+        .PENABLE(uart_if.PENABLE),
+        .PSEL(uart_if.PSEL),
+        .PRDATA(uart_if.PRDATA),
+        .PREADY(uart_if.PREADY),
+        // inport signals
+        .tx(uart_if.tx),
+        .rx(uart_if.rx)
+    );
+
+    always #5 PCLK = ~PCLK;
+    
+    initial begin
+        PCLK = 0;
+        PRESET = 1;
+        #10
+        PRESET = 0;
+        env = new(uart_if);  // uart_if를 환경에 전달
+        env.run(10);
+        #50;
+    end
+endmodule
+
