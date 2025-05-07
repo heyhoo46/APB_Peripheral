@@ -202,9 +202,9 @@ endmodule
 
 module kalman_filter #(
     parameter DATA_BITS = 9,
-    parameter Q = 16,   // 프로세스 노이즈
-    parameter R = 32    // 측정 노이즈
-) (
+    parameter Q = 16,    // 프로세스 노이즈
+    parameter R = 32     // 측정 노이즈
+)(
     input  logic clk,
     input  logic reset,
     input  logic new_data_ready,
@@ -212,32 +212,67 @@ module kalman_filter #(
     output logic [DATA_BITS-1:0] data_out
 );
 
+    typedef enum logic [1:0] {
+        IDLE,
+        PREDICT,
+        COMPUTE_GAIN,
+        UPDATE
+    } state_e;
+
+    state_e state, next_state;
+
+    // Internal signals
     logic [DATA_BITS+7:0] x_est, x_pred;
     logic [DATA_BITS+7:0] P, P_pred, K;
     logic [DATA_BITS-1:0] z;
+    logic [DATA_BITS+7:0] update_term;
 
+    // FSM: Sequential
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
+            state <= IDLE;
             x_est <= 0;
             P <= 1 << 4;  // 초기 오차
-        end else if (new_data_ready) begin
-            // 예측 단계
-            x_pred = x_est;
-            P_pred = P + Q;
+        end else begin
+            state <= next_state;
 
-            // 칼만 이득
-            K = (P_pred << 8) / (P_pred + R);  // Q8.8로 표현
-
-            // 측정 입력
-            z = data_in;
-
-            // 갱신 단계
-            x_est = x_pred + ((K * (z - x_pred[DATA_BITS-1:0])) >> 8);
-            P = ((1 << 8) - K) * P_pred >> 8;
-
+            case (state)
+                IDLE: begin
+                    if (new_data_ready) begin
+                        z <= data_in;
+                    end
+                end
+                PREDICT: begin
+                    x_pred <= x_est;
+                    P_pred <= P + Q;
+                end
+                COMPUTE_GAIN: begin
+                    if (P_pred + R != 0)
+                        K <= (P_pred << 8) / (P_pred + R);  // Q8.8
+                    else
+                        K <= 0;
+                end
+                UPDATE: begin
+                    update_term <= (K * (z - x_pred[DATA_BITS-1:0])) >> 8;
+                    x_est <= x_pred + update_term;
+                    P <= ((1 << 8) - K) * P_pred >> 8;
+                end
+            endcase
         end
+    end
+
+    // FSM: Combinational
+    always_comb begin
+        next_state = state;
+        case (state)
+            IDLE:       if (new_data_ready) next_state = PREDICT;
+            PREDICT:    next_state = COMPUTE_GAIN;
+            COMPUTE_GAIN: next_state = UPDATE;
+            UPDATE:     next_state = IDLE;
+        endcase
     end
 
     assign data_out = x_est[DATA_BITS-1:0];
 
 endmodule
+
