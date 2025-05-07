@@ -59,7 +59,7 @@ typedef struct {
 
 #define TIMER2_BASEADDR     (APB_BASEADDR + 0x3000)
 #define UART_BASEADDR       (APB_BASEADDR + 0x3400)
-#define TILT_BASEADDR       (APB_BASEADDR + 0x3800)
+#define TILT_BASEADDR       (APB_BASEADDR + 0x4400)
 #define NOTHING_BASEADDR    (APB_BASEADDR + 0x3C00)
 #define BUZZER_BASEADDR     (APB_BASEADDR + 0x4000)
 
@@ -325,13 +325,29 @@ int main() {
                 break;
             
             case (1<<2):
-                if(tilt_read(TILT))
+                FND_init(FND, POWER_OFF);
+                while(Switch_read(GPIOB) == (1<<2))
                 {
-                    LED_write(GPIOA,(1<<7));
-                    UART_Send_tilt_msg(UART);
-                    delay(500);
+                    delay(10);
+                    if(tilt_read(TILT))
+                    {
+                        LED_write(GPIOA,(1<<7));
+                        UART_send(UART, 'w');
+                        UART_send(UART, 'a');
+                        UART_send(UART, 'r');
+                        UART_send(UART, 'n');
+                        UART_send(UART, 'i');
+                        UART_send(UART, 'n');
+                        UART_send(UART, 'g');
+                        UART_send(UART, '!');
+                        UART_send(UART, '!');
+                        UART_send(UART, 0x0A);
+                        //UART_Send_tilt_msg(UART);
+                        delay(500);
+                    }
+                    else LED_write(GPIOA, 0);
                 }
-                else LED_write(GPIOA, 0);
+                FND_init(FND, POWER_ON);
                 break;
 
 
@@ -497,9 +513,9 @@ void UART_Send_Humi(UART_TypeDef *uart, uint32_t humi_integral_10, uint32_t humi
         ':',         // :
         '0' + humi_integral_10,   // tens
         '0' + humi_integral_1,    // ones
-        '.',
         '0' + humi_decimal_10,    // tens
         '0' + humi_decimal_1,     // ones
+        '%',
         0x0A,         // \n (newline)
         0x00          // NULL (string terminator)
     };
