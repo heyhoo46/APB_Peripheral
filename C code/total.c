@@ -332,6 +332,7 @@ int main() {
                     delay(500);
                 }
                 else LED_write(GPIOA, 0);
+                break;
 
 
             default:
