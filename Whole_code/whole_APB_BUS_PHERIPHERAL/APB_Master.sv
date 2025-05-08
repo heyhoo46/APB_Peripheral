@@ -22,7 +22,8 @@ module APB_Master (
     output logic        PSEL10,     // UART
     output logic        PSEL11,     // TILT
     output logic        PSEL12,     // RGB
-    output logic        PSEL13,     // BUZZER
+    output logic        PSEL13,     // BUZZER_BLINK
+    output logic        PSEL14,     // BUZZER_TONE
     input  logic [31:0] PRDATA0,
     input  logic [31:0] PRDATA1,
     input  logic [31:0] PRDATA2,
@@ -37,6 +38,7 @@ module APB_Master (
     input  logic [31:0] PRDATA11,
     input  logic [31:0] PRDATA12,
     input  logic [31:0] PRDATA13,
+    input  logic [31:0] PRDATA14,
     input  logic        PREADY0,
     input  logic        PREADY1,
     input  logic        PREADY2,
@@ -51,6 +53,7 @@ module APB_Master (
     input  logic        PREADY11,
     input  logic        PREADY12,
     input  logic        PREADY13,
+    input  logic        PREADY14,
     // Internal Interface Signals
     input  logic        transfer,  // trigger signal
     output logic        ready,
@@ -63,7 +66,7 @@ module APB_Master (
     logic [31:0] temp_wdata_next, temp_wdata_reg;
     logic temp_write_next, temp_write_reg;
     logic decoder_en;
-    logic [13:0] pselx;
+    logic [14:0] pselx;
 
     assign PSEL0 = pselx[0];
     assign PSEL1 = pselx[1];
@@ -79,6 +82,7 @@ module APB_Master (
     assign PSEL11 = pselx[11];
     assign PSEL12 = pselx[12];
     assign PSEL13 = pselx[13];
+    assign PSEL14 = pselx[14];
 
     typedef enum bit [1:0] {
         IDLE,
@@ -173,6 +177,7 @@ module APB_Master (
         .d11   (PRDATA11),
         .d12   (PRDATA12),
         .d13   (PRDATA13),
+        .d14   (PRDATA14),
         .r0   (PREADY0),
         .r1   (PREADY1),
         .r2   (PREADY2),
@@ -187,6 +192,7 @@ module APB_Master (
         .r11   (PREADY11),
         .r12   (PREADY12),
         .r13   (PREADY13),
+        .r14   (PREADY14),
         .rdata(rdata),
         .ready(ready)
     );
@@ -195,30 +201,31 @@ endmodule
 module APB_Decoder (
     input  logic        en,
     input  logic [31:0] sel,
-    output logic [ 13:0] y
+    output logic [ 14:0] y
 );
     always_comb begin
-        y = 14'b0;
+        y = 15'b0;
         if (en) begin
             casex (sel)
                 32'h1000_0xxx: y = 14'b00000000000001;  // RAM
-                32'h1000_10xx, 32'h1000_11xx, 32'h1000_12xx, 32'h1000_13xx: y = 14'b00000000000010;  // TIMER1
-                32'h1000_14xx, 32'h1000_15xx, 32'h1000_16xx, 32'h1000_17xx: y = 14'b00000000000100;  // GPIOA
-                32'h1000_18xx, 32'h1000_19xx, 32'h1000_1Axx, 32'h1000_1Bxx: y = 14'b00000000001000;  // GPIOB
-                32'h1000_1Cxx, 32'h1000_1Dxx, 32'h1000_1Exx, 32'h1000_1Fxx: y = 14'b00000000010000;  // GPIOC
-                32'h1000_20xx, 32'h1000_21xx, 32'h1000_22xx, 32'h1000_23xx: y = 14'b00000000100000;  // FND
-                32'h1000_24xx, 32'h1000_25xx, 32'h1000_26xx, 32'h1000_27xx: y = 14'b00000001000000;  // UltraSonic
-                32'h1000_28xx, 32'h1000_29xx, 32'h1000_2Axx, 32'h1000_2Bxx: y = 14'b00000010000000;  // DHT-11
-                32'h1000_2Cxx, 32'h1000_2Dxx, 32'h1000_2Exx, 32'h1000_2Fxx: y = 14'b00000100000000;  // BLINK
-                32'h1000_30xx, 32'h1000_31xx, 32'h1000_32xx, 32'h1000_33xx: y = 14'b00001000000000;  // TIMER2
-                32'h1000_34xx, 32'h1000_35xx, 32'h1000_36xx, 32'h1000_37xx: y = 14'b00010000000000;  // UART
-                32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: y = 14'b00100000000000;  // TILT
-                32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: y = 14'b01000000000000;  // RGB
-                32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: y = 14'b10000000000000;  // BUZZER
+                32'h1000_10xx, 32'h1000_11xx, 32'h1000_12xx, 32'h1000_13xx: y = 15'b000000000000010;  // TIMER1
+                32'h1000_14xx, 32'h1000_15xx, 32'h1000_16xx, 32'h1000_17xx: y = 15'b000000000000100;  // GPIOA
+                32'h1000_18xx, 32'h1000_19xx, 32'h1000_1Axx, 32'h1000_1Bxx: y = 15'b000000000001000;  // GPIOB
+                32'h1000_1Cxx, 32'h1000_1Dxx, 32'h1000_1Exx, 32'h1000_1Fxx: y = 15'b000000000010000;  // GPIOC
+                32'h1000_20xx, 32'h1000_21xx, 32'h1000_22xx, 32'h1000_23xx: y = 15'b000000000100000;  // FND
+                32'h1000_24xx, 32'h1000_25xx, 32'h1000_26xx, 32'h1000_27xx: y = 15'b000000001000000;  // UltraSonic
+                32'h1000_28xx, 32'h1000_29xx, 32'h1000_2Axx, 32'h1000_2Bxx: y = 15'b000000010000000;  // DHT-11
+                32'h1000_2Cxx, 32'h1000_2Dxx, 32'h1000_2Exx, 32'h1000_2Fxx: y = 15'b000000100000000;  // BLINK
+                32'h1000_30xx, 32'h1000_31xx, 32'h1000_32xx, 32'h1000_33xx: y = 15'b000001000000000;  // TIMER2
+                32'h1000_34xx, 32'h1000_35xx, 32'h1000_36xx, 32'h1000_37xx: y = 15'b000010000000000;  // UART
+                32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: y = 15'b000100000000000;  // TILT
+                32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: y = 15'b001000000000000;  // RGB
+                32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: y = 15'b010000000000000;  // BUZZER BLINK
+                32'h1000_44xx, 32'h1000_45xx, 32'h1000_46xx, 32'h1000_47xx: y = 15'b100000000000000;  // BUZZER TONE
             endcase
         end
     end
-endmodule 
+endmodule
 
 module APB_Mux (
     input  logic [31:0] sel,
@@ -236,6 +243,7 @@ module APB_Mux (
     input  logic [31:0] d11,
     input  logic [31:0] d12,
     input  logic [31:0] d13,
+    input  logic [31:0] d14,
     input  logic        r0,
     input  logic        r1,
     input  logic        r2,
@@ -250,6 +258,7 @@ module APB_Mux (
     input  logic        r11,
     input  logic        r12,
     input  logic        r13,
+    input  logic        r14,
     output logic [31:0] rdata,
     output logic        ready
 );
@@ -271,6 +280,7 @@ module APB_Mux (
             32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: rdata = d11;
             32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: rdata = d12;
             32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: rdata = d13;
+            32'h1000_44xx, 32'h1000_45xx, 32'h1000_46xx, 32'h1000_47xx: rdata = d14;
         endcase
     end
 
@@ -291,6 +301,7 @@ module APB_Mux (
             32'h1000_38xx, 32'h1000_39xx, 32'h1000_3Axx, 32'h1000_3Bxx: ready = r11;
             32'h1000_3Cxx, 32'h1000_3Dxx, 32'h1000_3Exx, 32'h1000_3Fxx: ready = r12;
             32'h1000_40xx, 32'h1000_41xx, 32'h1000_42xx, 32'h1000_43xx: ready = r13;
+            32'h1000_44xx, 32'h1000_45xx, 32'h1000_46xx, 32'h1000_47xx: ready = r14;
         endcase
     end
 endmodule
