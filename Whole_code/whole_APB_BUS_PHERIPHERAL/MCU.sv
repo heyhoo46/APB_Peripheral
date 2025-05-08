@@ -12,7 +12,8 @@ module MCU (
     input  logic       echo,
     inout  logic       dht_io,
     output logic [2:0] led,
-    output logic buzzer,
+    output logic buzzer_blink,
+    output logic buzzer_tone,
 
     //UART PORT
     output logic       tx,
@@ -43,8 +44,9 @@ module MCU (
     logic        PSEL_BLINK;
     logic        PSEL_TIMER2;
     logic        PSEL_UART;
-    logic        PSEL_BUZZER;
+    logic        PSEL_BUZZER_BLINK;
     logic        PSEL_TILT;
+    logic        PSEL_BUZZER_TONE;
     logic [31:0] PRDATA_RAM;
     logic [31:0] PRDATA_TIMER;
     logic [31:0] PRDATA_GPIOA;
@@ -56,8 +58,9 @@ module MCU (
     logic [31:0] PRDATA_BLINK;
     logic [31:0] PRDATA_TIMER2;
     logic [31:0] PRDATA_UART;
-    logic [31:0] PRDATA_BUZZER;
+    logic [31:0] PRDATA_BUZZER_BLINK;
     logic [31:0] PRDATA_TILT;
+    logic [31:0] PRDATA_BUZZER_TONE;
     logic        PREADY_RAM;
     logic        PREADY_TIMER;
     logic        PREADY_GPIOA;
@@ -69,8 +72,9 @@ module MCU (
     logic        PREADY_BLINK;
     logic        PREADY_TIMER2;
     logic        PREADY_UART;
-    logic        PREADY_BUZZER;
+    logic        PREADY_BUZZER_BLINK;
     logic        PREADY_TILT;
+    logic        PREADY_BUZZER_TONE;
 
     // CPU - APB_Master Signals
     // Internal Interface Signals
@@ -118,7 +122,8 @@ module MCU (
         .PSEL10  (PSEL_UART),
         .PSEL11  (PSEL_TILT),
         .PSEL12  (),
-        .PSEL13  (PSEL_BUZZER),
+        .PSEL13  (PSEL_BUZZER_BLINK),
+        .PSEL14  (PSEL_BUZZER_TONE),
         .PRDATA0(PRDATA_RAM),
         .PRDATA1(PRDATA_TIMER),
         .PRDATA2(PRDATA_GPIOA),
@@ -132,7 +137,8 @@ module MCU (
         .PRDATA10(PRDATA_UART),
         .PRDATA11(PRDATA_TILT),
         .PRDATA12(),
-        .PRDATA13(PRDATA_BUZZER),
+        .PRDATA13(PRDATA_BUZZER_BLINK),
+        .PRDATA14(PRDATA_BUZZER_TONE),
         .PREADY0(PREADY_RAM),
         .PREADY1(PREADY_TIMER),
         .PREADY2(PREADY_GPIOA),
@@ -146,7 +152,8 @@ module MCU (
         .PREADY10(PREADY_UART),
         .PREADY11(PREADY_TILT),
         .PREADY12(),
-        .PREADY13(PREADY_BUZZER)
+        .PREADY13(PREADY_BUZZER_BLINK),
+        .PREADY14(PREADY_BUZZER_TONE)
     );
 
     ram U_RAM (
@@ -221,10 +228,10 @@ module MCU (
 
     blink_Periph U_buzzer_Periph (
         .*,
-        .PSEL  (PSEL_BUZZER),
-        .PRDATA(PRDATA_BUZZER),
-        .PREADY(PREADY_BUZZER),
-        .led(buzzer)
+        .PSEL  (PSEL_BUZZER_BLINK),
+        .PRDATA(PRDATA_BUZZER_BLINK),
+        .PREADY(PREADY_BUZZER_BLINK),
+        .led(buzzer_blink)
     );
 
     Timer_Periph U_Timer2 (
@@ -244,10 +251,18 @@ module MCU (
         .*,
         .PSEL  (PSEL_TILT),
         .PRDATA(PRDATA_TILT),
-        .PREADY(PREADY_TILT),
-        .tilt_sensor(tilt_sensor)
+        .PREADY(PREADY_TILT)
     );
 
+    SOUND_Periph U_SOUND_Periph(
+  
+        .*,
+        .PSEL  (PSEL_BUZZER_TONE),
+        .PRDATA(PRDATA_BUZZER_TONE),
+        .PREADY(PREADY_BUZZER_TONE),
+        .buzzer_tone(buzzer_tone)
+    
+);
 
 endmodule
 
